@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react'
+import { dashboardApi } from '../services/api'
+
 export default function Dashboard({ onNavigate, showToast }) {
-  const stats = [
+  const [stats, setStats] = useState([
     { label: 'Submissions Analyzed', value: '14,821', change: '+12.4% vs last month', dir: 'positive', color: 'purple',
       extra: <svg className="sparkline" viewBox="0 0 100 28" preserveAspectRatio="none"><defs><linearGradient id="sp1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#a855f7"/><stop offset="100%" stopColor="#06b6d4"/></linearGradient></defs><polyline points="0,24 16,18 32,20 48,10 64,13 80,6 96,8 100,4" fill="none" stroke="url(#sp1)" strokeWidth="2"/></svg>,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> },
@@ -12,15 +15,47 @@ export default function Dashboard({ onNavigate, showToast }) {
     { label: 'Human Reviewed', value: '8,106', change: '+22.3% reviewer activity', dir: 'positive', color: 'green',
       extra: <svg className="sparkline" viewBox="0 0 100 28" preserveAspectRatio="none"><defs><linearGradient id="sp2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#06b6d4"/></linearGradient></defs><polyline points="0,26 16,20 32,16 48,18 64,8 80,10 96,4 100,6" fill="none" stroke="url(#sp2)" strokeWidth="2"/></svg>,
       icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
-  ]
+  ])
 
-  const activities = [
+  const [activities, setActivities] = useState([
     { icon: 'ai-flag', name: 'Essay — Climate Change Policy', meta: 'hackathon-batch-4 · 2 min ago', badge: 'high', badgeLabel: 'High' },
     { icon: 'media',   name: 'Video — Interview Recording',  meta: 'media-queue · 8 min ago',       badge: 'medium', badgeLabel: 'Medium' },
     { icon: 'ok',      name: 'Research Abstract — ML Systems',meta: 'edu-cohort-2026 · 15 min ago', badge: 'low',  badgeLabel: 'Low' },
     { icon: 'ai-flag', name: 'Cover Letter — Product Manager',meta: 'recruiter-portal · 32 min ago',badge: 'high', badgeLabel: 'High' },
     { icon: 'ok',      name: 'Business Case — Supply Chain', meta: 'corp-eval-q4 · 1 hr ago',       badge: 'inconclusive', badgeLabel: 'N/A' },
-  ]
+  ])
+
+  useEffect(() => {
+    let mounted = true
+    async function loadData() {
+      try {
+        const metricsRes = await dashboardApi.getMetrics()
+        if (mounted && metricsRes?.data?.stats) {
+          // Merge incoming values with UI visual elements
+          setStats(prev => prev.map((s, idx) => {
+            const apiItem = metricsRes.data.stats[idx]
+            if (apiItem) {
+              return { ...s, value: apiItem.value || s.value, change: apiItem.change || s.change }
+            }
+            return s
+          }))
+        }
+      } catch {
+        // Keeps graceful fallback in offline mode
+      }
+
+      try {
+        const actRes = await dashboardApi.getActivities()
+        if (mounted && actRes?.data && actRes.data.length > 0) {
+          setActivities(actRes.data)
+        }
+      } catch {
+        // Keeps fallback
+      }
+    }
+    loadData()
+    return () => { mounted = false }
+  }, [])
 
   const modules = [
     { id: 'text',      color: 'purple', label: 'Text + Heatmap',  stat: '9,214 runs', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> },

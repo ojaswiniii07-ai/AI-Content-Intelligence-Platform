@@ -21,7 +21,23 @@ from app.schemas.rubric import RubricCreate, RubricRead, RubricUpdate
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewUpdate, ShortlistedCandidateItem
 from app.schemas.audit import AuditEventCreate, AuditEventRead, AuditEventDetail
 from app.schemas.batch import BatchCreate, BatchRead, BatchUpdate, CohortIntegrityReport
-from app.schemas.integration import IntegrationCreate, IntegrationRead, IntegrationUpdate
+from app.schemas.integration import (
+    IntegrationCreate,
+    IntegrationRead,
+    IntegrationUpdate,
+    IntegrationResponse,
+    IntegrationTestResponse,
+    ProviderMetadataResponse,
+)
+from app.schemas.webhook import (
+    WebhookEndpointCreate,
+    WebhookEndpointUpdate,
+    WebhookEndpointResponse,
+    WebhookEndpointCreatedResponse,
+    WebhookDeliveryResponse,
+    WebhookVerifyRequest,
+    WebhookVerifyResponse,
+)
 
 __all__ = [
     "APIResponse",

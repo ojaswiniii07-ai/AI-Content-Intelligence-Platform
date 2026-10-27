@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { shortlistingApi } from '../services/api'
 
 const initialProjects = [
   { id: 'p1', name: 'Hackathon 2026 — Final Round', count: 84, status: 'In progress', color: 'purple' },
@@ -76,12 +77,33 @@ const initialSubmissions = [
 ]
 
 export default function Shortlisting({ showToast }) {
-  const [projects] = useState(initialProjects)
+  const [projects, setProjects] = useState(initialProjects)
   const [activeProjectId, setActiveProjectId] = useState('p1')
   const [submissions, setSubmissions] = useState(initialSubmissions)
   const [sortBy, setSortBy] = useState('score-desc')
   const [selectedSub, setSelectedSub] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
+
+  useEffect(() => {
+    let mounted = true
+    async function fetchCohortData() {
+      try {
+        const pRes = await shortlistingApi.getProjects()
+        if (mounted && pRes?.data && pRes.data.length > 0) {
+          setProjects(pRes.data)
+        }
+      } catch {}
+
+      try {
+        const sRes = await shortlistingApi.getSubmissions(activeProjectId)
+        if (mounted && sRes?.data && sRes.data.length > 0) {
+          setSubmissions(sRes.data)
+        }
+      } catch {}
+    }
+    fetchCohortData()
+    return () => { mounted = false }
+  }, [activeProjectId])
 
   const currentProject = projects.find(p => p.id === activeProjectId) || projects[0]
 
@@ -100,12 +122,18 @@ export default function Shortlisting({ showToast }) {
     setSubmissions(sorted)
   }
 
-  const updateStatus = (id, newStatus) => {
+  const updateStatus = async (id, newStatus) => {
     setSubmissions(submissions.map(s => s.id === id ? { ...s, status: newStatus } : s))
     if (selectedSub && selectedSub.id === id) {
       setSelectedSub({ ...selectedSub, status: newStatus })
     }
-    showToast(`Updated ${id} to ${newStatus}`, 'success')
+
+    try {
+      await shortlistingApi.updateSubmissionStatus(id, newStatus)
+      showToast(`Updated ${id} to ${newStatus} (persisted)`, 'success')
+    } catch {
+      showToast(`Updated ${id} to ${newStatus}`, 'success')
+    }
   }
 
   const filteredSubmissions = submissions.filter(s => {
