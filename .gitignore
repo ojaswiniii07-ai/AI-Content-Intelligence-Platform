@@ -46,3 +46,5 @@ dataset/*
 Backend/uploads/*
 !Backend/uploads/.gitkeep
 
+
+ai/ml/models/demo_faces/

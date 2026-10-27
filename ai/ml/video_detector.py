@@ -249,9 +249,10 @@ class AuthentiQVideoDetector:
     @torch.no_grad()
     def _predict_face(self, face_tensor: torch.Tensor) -> float:
         """Predict fake probability for a single face tensor."""
-        # Normalize
-        x = (face_tensor - self._mean) / self._std
-        x = x.unsqueeze(0).to(self.device)
+        # Normalize on target device
+        face = face_tensor.to(self.device)
+        x = (face - self._mean) / self._std
+        x = x.unsqueeze(0)
         logit = self.model(x)
         return float(torch.sigmoid(logit).item())
 
