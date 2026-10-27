@@ -1,0 +1,137 @@
+{
+  "document_summary": {
+    "total_sentences": 14,
+    "ai_sentences": 14,
+    "human_sentences": 0,
+    "ai_percentage": 100.0,
+    "ai_char_pct": 100.0,
+    "avg_ai_score": 0.909,
+    "avg_human_score": 0
+  },
+  "sentence_spans": [
+    {
+      "text": "So I was thinking about climate change yesterday while sitting in traffic, \nwhich felt kind of ironic honestly.",
+      "label": "AI",
+      "score": 0.908,
+      "heat": "high",
+      "start": 0,
+      "end": 111
+    },
+    {
+      "text": "My car was barely moving and I just kept \nthinking \u2014 how did we get here?",
+      "label": "AI",
+      "score": 0.901,
+      "heat": "high",
+      "start": 112,
+      "end": 185
+    },
+    {
+      "text": "Like nobody woke up one day and decided \n\"let's destroy the atmosphere,\" it just kind of happened gradually.",
+      "label": "AI",
+      "score": 0.909,
+      "heat": "high",
+      "start": 186,
+      "end": 294
+    },
+    {
+      "text": "Climate change represents one of the most pressing and multifaceted challenges \nof the 21st century.",
+      "label": "AI",
+      "score": 0.922,
+      "heat": "high",
+      "start": 296,
+      "end": 396
+    },
+    {
+      "text": "The accelerating rate of global temperature increases, \ndriven primarily by anthropogenic greenhouse gas emissions, has far-reaching \nimplications for ecosystems, economies, and human societies worldwide.",
+      "label": "AI",
+      "score": 0.946,
+      "heat": "high",
+      "start": 397,
+      "end": 601
+    },
+    {
+      "text": "Furthermore, the compounding effects of deforestation and industrial activity \nhave significantly exacerbated these trends.",
+      "label": "AI",
+      "score": 0.949,
+      "heat": "high",
+      "start": 603,
+      "end": 726
+    },
+    {
+      "text": "Moreover, it is crucial to \nacknowledge that without immediate and comprehensive policy interventions, \nthe consequences will be irreversible.",
+      "label": "AI",
+      "score": 0.933,
+      "heat": "high",
+      "start": 727,
+      "end": 869
+    },
+    {
+      "text": "My neighbour actually just got solar panels put on his roof last month.",
+      "label": "AI",
+      "score": 0.904,
+      "heat": "high",
+      "start": 871,
+      "end": 942
+    },
+    {
+      "text": "He said the whole process was way less complicated than he expected.",
+      "label": "AI",
+      "score": 0.843,
+      "heat": "high",
+      "start": 944,
+      "end": 1012
+    },
+    {
+      "text": "Cost him about twelve grand but apparently gets most of it back in tax credits.",
+      "label": "AI",
+      "score": 0.844,
+      "heat": "high",
+      "start": 1014,
+      "end": 1093
+    },
+    {
+      "text": "I don't know, it got me thinking maybe I should look into it too, \nthough our roof faces north so I'm not sure it'd work as well.",
+      "label": "AI",
+      "score": 0.875,
+      "heat": "high",
+      "start": 1095,
+      "end": 1224
+    },
+    {
+      "text": "In conclusion, addressing climate change necessitates a holistic and \ncollaborative approach that integrates renewable energy adoption, \nsustainable urban planning, and behavioural change at both individual \nand institutional levels.",
+      "label": "AI",
+      "score": 0.935,
+      "heat": "high",
+      "start": 1226,
+      "end": 1459
+    },
+    {
+      "text": "Additionally, leveraging technological innovation \nand international cooperation will be paramount in achieving the ambitious \ntargets set forth by global climate accords.",
+      "label": "AI",
+      "score": 0.937,
+      "heat": "high",
+      "start": 1460,
+      "end": 1631
+    },
+    {
+      "text": "Overall, the path forward \ndemands unwavering commitment from all stakeholders.",
+      "label": "AI",
+      "score": 0.923,
+      "heat": "high",
+      "start": 1632,
+      "end": 1711
+    }
+  ],
+  "merged_blocks": [
+    {
+      "text": "So I was thinking about climate change yesterday while sitting in traffic, \nwhich felt kind of ironic honestly. My car was barely moving and I just kept \nthinking \u2014 how did we get here? Like nobody woke up one day and decided \n\"let's destroy the atmosphere,\" it just kind of happened gradually. Climate change represents one of the most pressing and multifaceted challenges \nof the 21st century. The accelerating rate of global temperature increases, \ndriven primarily by anthropogenic greenhouse gas emissions, has far-reaching \nimplications for ecosystems, economies, and human societies worldwide. Furthermore, the compounding effects of deforestation and industrial activity \nhave significantly exacerbated these trends. Moreover, it is crucial to \nacknowledge that without immediate and comprehensive policy interventions, \nthe consequences will be irreversible. My neighbour actually just got solar panels put on his roof last month. He said the whole process was way less complicated than he expected. Cost him about twelve grand but apparently gets most of it back in tax credits. I don't know, it got me thinking maybe I should look into it too, \nthough our roof faces north so I'm not sure it'd work as well. In conclusion, addressing climate change necessitates a holistic and \ncollaborative approach that integrates renewable energy adoption, \nsustainable urban planning, and behavioural change at both individual \nand institutional levels. Additionally, leveraging technological innovation \nand international cooperation will be paramount in achieving the ambitious \ntargets set forth by global climate accords. Overall, the path forward \ndemands unwavering commitment from all stakeholders.",
+      "label": "AI",
+      "score": 0.921,
+      "heat": "high",
+      "start": 0,
+      "end": 1711
+    }
+  ],
+  "model_version": "authentiq-v1.0",
+  "threshold": 0.5
+}

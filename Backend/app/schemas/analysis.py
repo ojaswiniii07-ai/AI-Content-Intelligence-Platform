@@ -41,6 +41,33 @@ class TextAnalysisResponse(BaseModel):
     analyzed_at: datetime
 
 
+class TextSpan(BaseModel):
+    text: str
+    label: str  # 'AI' | 'Human'
+    score: float
+    heat: str  # low, mid, high
+    start: int
+    end: int
+
+
+class SpanDocumentSummary(BaseModel):
+    total_sentences: int = 0
+    ai_sentences: int = 0
+    human_sentences: int = 0
+    ai_percentage: float = 0.0
+    ai_char_pct: float = 0.0
+    avg_ai_score: float = 0.0
+    avg_human_score: float = 0.0
+
+
+class SpanDetectionResponse(BaseModel):
+    document_summary: SpanDocumentSummary
+    sentence_spans: List[TextSpan]
+    merged_blocks: List[TextSpan]
+    model_version: str
+    threshold: float
+
+
 # --- Media Analysis Schemas ---
 class MediaAnomaly(BaseModel):
     frame: int

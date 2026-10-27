@@ -1,0 +1,21 @@
+{
+  "model_version": "authentiq-v1.0",
+  "train_samples": 38137,
+  "val_samples": 6731,
+  "char_features": 150391,
+  "word_features": 300000,
+  "ling_features": 12,
+  "sgd_auc": 0.8894,
+  "lgb_auc": 0.9996,
+  "ensemble_auc": 0.997,
+  "ensemble_acc": 0.9941,
+  "ensemble_f1": 0.9923,
+  "optimal_threshold": 0.5,
+  "sgd_weight": 0.4708,
+  "lgb_weight": 0.5292,
+  "dataset": "train_v2_drcat_02.csv",
+  "label_map": {
+    "0": "Human",
+    "1": "AI-Generated"
+  }
+}
