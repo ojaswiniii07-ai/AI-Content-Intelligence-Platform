@@ -10,7 +10,14 @@ const CaveatBox = () => (
 
 export default function TextAnalysis({ showToast }) {
   const [inputTab, setInputTab] = useState('paste')
-  const [text, setText] = useState('')
+  const [text, setText] = useState(() => {
+    const seed = localStorage.getItem('authentiq_seed_text')
+    if (seed) {
+      localStorage.removeItem('authentiq_seed_text')
+      return seed
+    }
+    return ''
+  })
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState(null)
 

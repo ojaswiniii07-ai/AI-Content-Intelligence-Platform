@@ -18,6 +18,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]",
         extra={"origins": settings.CORS_ORIGINS},
     )
+    # Ensure database tables exist
+    try:
+        from app.db.base import Base
+        from app.db.session import engine
+        import app.models  # noqa: F401
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database initialized successfully.")
+    except Exception as exc:
+        logger.warning(f"Database schema auto-init warning: {exc}")
+
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
 
@@ -39,7 +50,7 @@ def create_application() -> FastAPI:
     # Configure CORS for configured frontend origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -70,16 +81,44 @@ def create_application() -> FastAPI:
     # Mount API v1 endpoints
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
-    @app.get("/", tags=["Root"])
-    async def root_info():
-        return {
-            "name": settings.PROJECT_NAME,
-            "version": settings.VERSION,
-            "environment": settings.ENVIRONMENT,
-            "docs": "/docs",
-            "api_prefix": settings.API_V1_PREFIX,
-            "status": "online",
-        }
+    # ── Mount Frontend Static Files & SPA Routing ───────────────
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse, JSONResponse
+    from fastapi import HTTPException
+
+    frontend_dist = Path(__file__).resolve().parents[2] / "dist"
+    if frontend_dist.exists() and (frontend_dist / "index.html").exists():
+        assets_dir = frontend_dist / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_spa(full_path: str):
+            # Pass through API and doc routes
+            if (
+                full_path.startswith("api/")
+                or full_path.startswith("docs")
+                or full_path.startswith("redoc")
+                or full_path == "openapi.json"
+            ):
+                raise HTTPException(status_code=404, detail="Not Found")
+
+            target_file = frontend_dist / full_path
+            if target_file.is_file():
+                return FileResponse(str(target_file))
+            return FileResponse(str(frontend_dist / "index.html"))
+    else:
+        @app.get("/", tags=["Root"])
+        async def root_info():
+            return {
+                "name": settings.PROJECT_NAME,
+                "version": settings.VERSION,
+                "environment": settings.ENVIRONMENT,
+                "docs": "/docs",
+                "api_prefix": settings.API_V1_PREFIX,
+                "status": "online",
+            }
 
     return app
 

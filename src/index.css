@@ -1,74 +1,203 @@
 /* ============================================================
-   AuthentiQ — Global CSS (React + Vite)
+   AuthentiQ — Global CSS Tokens & Base Styles
+   Design language inspired by Sarvam.ai — clean, architectural,
+   minimal with subtle depth. Supports light & dark mode.
    ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ── Design Tokens: Light Mode (default) ────────────────────── */
 :root {
-  --bg-base:      #080814;
-  --bg-surface:   #0d0d1f;
-  --bg-card:      #11112a;
-  --bg-elevated:  #16163a;
-  --border:       #1e1e3a;
-  --border-light: #252550;
-  --text-primary: #e2e8f0;
-  --text-secondary:#94a3b8;
-  --text-muted:   #4a5568;
-  --purple:       #a855f7;
-  --purple-dim:   rgba(168,85,247,.15);
-  --cyan:         #06b6d4;
-  --cyan-dim:     rgba(6,182,212,.15);
-  --green:        #10b981;
-  --green-dim:    rgba(16,185,129,.15);
-  --orange:       #f97316;
-  --orange-dim:   rgba(249,115,22,.15);
-  --red:          #ef4444;
-  --red-dim:      rgba(239,68,68,.15);
-  --yellow:       #f59e0b;
-  --sidebar-w:    230px;
-  --topbar-h:     56px;
-  --radius:       12px;
-  --radius-sm:    8px;
+  /* Backgrounds — warm pearl and crisp card surfaces like Sarvam */
+  --bg-base:        #faf8f5;
+  --bg-surface:     #f4f1ec;
+  --bg-card:        #ffffff;
+  --bg-elevated:    #ece8e1;
+  --bg-hover:       #e5e1d7;
+  --bg-overlay:     rgba(250, 248, 245, 0.94);
+
+  /* Borders — soft low-contrast architectural outlines */
+  --border:         rgba(0, 0, 0, 0.08);
+  --border-light:   rgba(0, 0, 0, 0.04);
+  --border-strong:  rgba(0, 0, 0, 0.16);
+
+  /* Text — high contrast, deeply legible */
+  --text-primary:   #15161d;
+  --text-secondary: #484c59;
+  --text-muted:     #848997;
+  --text-inverse:   #ffffff;
+
+  /* Brand palette — sovereign indigo & deep slate */
+  --indigo:         #4f5df0;
+  --indigo-dim:     rgba(79, 93, 240, 0.09);
+  --indigo-mid:     rgba(79, 93, 240, 0.18);
+  --indigo-dark:    #3542c8;
+
+  --teal:           #0ea5e9;
+  --teal-dim:       rgba(14, 165, 233, 0.09);
+
+  --emerald:        #10b981;
+  --emerald-dim:    rgba(16, 185, 129, 0.10);
+
+  --amber:          #f59e0b;
+  --amber-dim:      rgba(245, 158, 11, 0.12);
+
+  --rose:           #f43f5e;
+  --rose-dim:       rgba(244, 63, 94, 0.10);
+
+  --slate:          #64748b;
+  --slate-dim:      rgba(100, 116, 139, 0.10);
+
+  /* Semantic aliases */
+  --purple:         var(--indigo);
+  --purple-dim:     var(--indigo-dim);
+  --cyan:           var(--teal);
+  --cyan-dim:       var(--teal-dim);
+  --green:          var(--emerald);
+  --green-dim:      var(--emerald-dim);
+  --orange:         var(--amber);
+  --orange-dim:     var(--amber-dim);
+  --red:            var(--rose);
+  --red-dim:        var(--rose-dim);
+  --yellow:         var(--amber);
+
+  /* Layout */
+  --sidebar-w:      240px;
+  --topbar-h:       58px;
+  --radius:         12px;
+  --radius-sm:      8px;
+  --radius-xs:      6px;
+  --radius-lg:      16px;
+  --radius-xl:      22px;
+  --radius-full:    9999px;
+
+  /* Shadows */
+  --shadow-xs:      0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:      0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:      0 4px 14px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.02);
+  --shadow-lg:      0 12px 28px rgba(0,0,0,.08), 0 4px 8px rgba(0,0,0,.03);
+  --shadow-brand:   0 4px 20px rgba(79,93,240,.22);
+
+  /* Transitions */
+  --transition:     all 0.22s cubic-bezier(0.2, 0, 0, 1);
+  --transition-slow:all 0.4s cubic-bezier(0.2, 0, 0, 1);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Design Tokens: Dark Mode ───────────────────────────────── */
+[data-theme="dark"] {
+  --bg-base:        #0d0e13;
+  --bg-surface:     #13141c;
+  --bg-card:        #181a24;
+  --bg-elevated:    #202330;
+  --bg-hover:       #292d3e;
+  --bg-overlay:     rgba(13, 14, 19, 0.94);
 
-html { font-size: 14px; scroll-behavior: smooth; }
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-light:   rgba(255, 255, 255, 0.04);
+  --border-strong:  rgba(255, 255, 255, 0.16);
+
+  --text-primary:   #f6f7fa;
+  --text-secondary: #9aa0b2;
+  --text-muted:     #5b6070;
+  --text-inverse:   #0d0e13;
+
+  --indigo:         #7382ff;
+  --indigo-dim:     rgba(115, 130, 255, 0.12);
+  --indigo-mid:     rgba(115, 130, 255, 0.22);
+  --indigo-dark:    #94a1ff;
+
+  --teal:           #38bdf8;
+  --teal-dim:       rgba(56, 189, 248, 0.12);
+
+  --emerald:        #34d399;
+  --emerald-dim:    rgba(52, 211, 153, 0.12);
+
+  --amber:          #fbbf24;
+  --amber-dim:      rgba(251, 191, 36, 0.12);
+
+  --rose:           #fb7185;
+  --rose-dim:       rgba(251, 113, 133, 0.12);
+
+  --shadow-xs:      0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm:      0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.2);
+  --shadow-md:      0 4px 14px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.2);
+  --shadow-lg:      0 12px 28px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.2);
+  --shadow-brand:   0 4px 20px rgba(115,130,255,.28);
+}
+
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
-  line-height: 1.5;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.012em;
+  line-height: 1.6;
   overflow: hidden;
   height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-#root { height: 100vh; display: flex; }
+#root {
+  height: 100vh;
+  display: flex;
+}
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg-surface); }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a6a; }
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--slate); }
 
+/* ── Selection ──────────────────────────────────────────────── */
+::selection { background: var(--indigo-mid); color: var(--indigo); }
+
+/* ── Animations ─────────────────────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); }
-  50%       { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(24px); }
+}
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
-
-@keyframes slideOutRight {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(20px); }
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }

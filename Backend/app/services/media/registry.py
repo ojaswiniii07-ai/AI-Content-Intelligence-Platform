@@ -11,15 +11,18 @@ from typing import Dict, List, Optional
 from app.services.media.base import BaseDetectorAdapter
 from app.services.media.image_adapter import ImageSyntheticAdapter
 from app.services.media.audio_adapter import AudioSyntheticAdapter
-from app.services.media.video_adapter import AVConsistencyAdapter, VideoManipulationAdapter
+from app.services.media.video_adapter import AVConsistencyAdapter, LocalVideoDeepfakeAdapter, VideoManipulationAdapter
 
-# All registered adapters
+
+# All registered adapters (LocalVideoDeepfakeAdapter runs first — no API key required)
 _ADAPTERS: List[BaseDetectorAdapter] = [
+    LocalVideoDeepfakeAdapter(),
     ImageSyntheticAdapter(),
     AudioSyntheticAdapter(),
     VideoManipulationAdapter(),
     AVConsistencyAdapter(),
 ]
+
 
 # Quick lookup by key
 _ADAPTER_MAP: Dict[str, BaseDetectorAdapter] = {a.ADAPTER_KEY: a for a in _ADAPTERS}

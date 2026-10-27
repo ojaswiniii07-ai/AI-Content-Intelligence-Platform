@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 import math
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
@@ -9,6 +10,7 @@ from app.models.user import User
 from app.schemas.analysis import (
     ConfusionMatrix,
     DimensionScore,
+    FrameAnalysisResult,
     MediaAnalysisRequest,
     MediaAnalysisResponse,
     MediaAnomaly,
@@ -20,7 +22,10 @@ from app.schemas.analysis import (
     TextAnalysisRequest,
     TextAnalysisResponse,
     TextSpan,
+    VideoDeepfakeRequest,
+    VideoDeepfakeResponse,
 )
+
 from app.schemas.common import APIResponse
 
 # Ensure repository root is in sys.path to import ML detector
@@ -35,6 +40,7 @@ try:
 except Exception:
     get_detector = None
 
+
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
 
 
@@ -42,7 +48,6 @@ router = APIRouter(prefix="/analysis", tags=["Analysis"])
 async def run_text_analysis(
     req: TextAnalysisRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TextAnalysisResponse]:
     """
     Analyzes submitted text for AI-generation signals, sentence-level heatmap spans,
@@ -279,3 +284,90 @@ async def run_fp_fn_simulation(
     )
 
     return APIResponse(data=sim_res, message="Simulation computed successfully")
+
+
+@router.post("/video-deepfake", response_model=APIResponse[VideoDeepfakeResponse])
+async def run_video_deepfake_detection(
+    req: VideoDeepfakeRequest,
+    current_user: User = Depends(get_current_user),
+) -> APIResponse[VideoDeepfakeResponse]:
+    """
+    **Real-time Video Deepfake Detection** using the bundled AuthentiQ model.
+
+    Accepts either:
+    - `upload_id`: returned by `POST /media/upload`
+    - `file_path`: absolute server-side path (for integration / notebook testing)
+
+    Runs EfficientNet-B0 + MTCNN face extraction synchronously — no Celery, no API key needed.
+    Returns per-frame predictions and an aggregated verdict.
+    """
+    from datetime import timezone
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path as _Path
+
+    # Resolve file path from upload_id or direct path
+    file_path: str | None = None
+    if req.upload_id:
+        from app.services.media.storage import get_upload_dir
+        upload_dir = get_upload_dir()
+        matches = list(upload_dir.glob(f"{req.upload_id}*"))
+        if not matches:
+            raise HTTPException(
+                status_code=404,
+                detail=f"upload_id '{req.upload_id}' not found. File may have expired.",
+            )
+        file_path = str(matches[0])
+    else:
+        file_path = req.file_path
+        if not _Path(file_path).exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"File not found: {file_path}",
+            )
+
+    try:
+        cmd = [sys.executable, "-m", "ai.ml.video_detector", file_path, str(req.n_frames)]
+        proc = subprocess.run(cmd, cwd=_REPO_ROOT, capture_output=True, text=True, timeout=120)
+        if proc.returncode != 0:
+            raise RuntimeError(f"Video detector failed: {proc.stderr[:400]}")
+        data = json.loads(proc.stdout.strip())
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Deepfake detection failed: {str(exc)[:400]}",
+        )
+
+    frame_results = [
+        FrameAnalysisResult(
+            frame_index=fr["frame_index"],
+            fake_probability=fr["fake_probability"],
+            verdict=fr["verdict"],
+            confidence=fr["confidence"],
+            face_detected=fr["face_detected"],
+        )
+        for fr in data.get("frame_results", [])
+    ]
+
+    response = VideoDeepfakeResponse(
+        id=f"vd_{uuid.uuid4().hex[:8]}",
+        fake_probability=data.get("fake_probability", 0.0),
+        overall_score=data.get("overall_score", 0.0),
+        verdict=data.get("verdict", "Likely Authentic"),
+        confidence_level=data.get("confidence_level", "Medium Confidence"),
+        model_version=data.get("model_version", "efficientnet-b0-v1.0"),
+        total_frames_sampled=data.get("total_frames_sampled", req.n_frames),
+        faces_detected=data.get("faces_detected", 0),
+        frame_results=frame_results,
+        aggregation_method=data.get("aggregation_method", "mean+max weighted"),
+        adapter="local_video_deepfake_v1",
+        caveat=(
+            "Video deepfake scores are probabilistic indicators from a fine-tuned EfficientNet-B0 model. "
+            "Results are not admissible as forensic proof and require human review for consequential decisions."
+        ),
+        analyzed_at=datetime.now(timezone.utc),
+    )
+
+    return APIResponse(data=response, message="Video deepfake analysis completed")
+

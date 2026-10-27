@@ -2,9 +2,10 @@
 Video detector adapter — manipulation and sampled-frame analysis.
 
 Supported backends (VIDEO_DETECTOR env var):
+  - "local"         : AuthentiQ fine-tuned EfficientNet-B0 + MTCNN (bundled, no API key needed)
   - "hive_video"    : Hive Video Deepfake Detection (requires HIVE_API_KEY)
   - "microsoft_video": Azure Video Indexer (requires AZURE_VIDEO_INDEXER_KEY + AZURE_VIDEO_INDEXER_ACCOUNT_ID)
-  - unset           → not configured → INCONCLUSIVE
+  - unset           → falls back to local model if available, else INCONCLUSIVE
 
 Frame references and timestamps are ONLY populated when the provider
 returns frame-level or clip-level output. Never fabricated.
@@ -12,11 +13,13 @@ returns frame-level or clip-level output. Never fabricated.
 Optional AV-consistency check is ONLY run when:
   - The video has an audio track (has_audio_track=True in metadata)
   - AV_CONSISTENCY_CHECK env var is "true"
-  - At least one audio adapter is configured
+  - At least one audio adapter is available
 """
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.services.media.base import (
@@ -25,6 +28,155 @@ from app.services.media.base import (
     DetectorResult,
     NotConfiguredError,
 )
+
+# Ensure project root is in sys.path so we can import ai.ml.video_detector
+_REPO_ROOT = str(Path(__file__).resolve().parents[5])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+
+# ── Local (bundled) Video Deepfake Adapter ────────────────────────────────────
+
+class LocalVideoDeepfakeAdapter(BaseDetectorAdapter):
+    """
+    Runs the AuthentiQ fine-tuned EfficientNet-B0 + MTCNN model locally.
+
+    This adapter requires no external API keys. It uses the bundled model
+    weights at ai/ml/models/deepfake_efficientnet_b0.pth.
+
+    is_configured() returns True when cv2 and torch are importable.
+    """
+
+    ADAPTER_KEY = "local_video_deepfake_v1"
+    MEDIA_TYPES = ["video", "image"]
+
+    supports_regions = False
+    supports_frame_refs = True   # Returns per-frame score list
+    supports_time_ranges = False
+
+    def is_configured(self) -> bool:
+        try:
+            import cv2  # noqa: F401
+            import torch  # noqa: F401
+            return True
+        except ImportError:
+            return False
+
+    def analyze(self, ctx: AdapterContext) -> DetectorResult:
+        if not self.is_configured():
+            raise NotConfiguredError(
+                f"Adapter {self.ADAPTER_KEY} requires cv2 and torch. "
+                "Run: pip install opencv-python-headless torch facenet-pytorch efficientnet-pytorch"
+            )
+
+        try:
+            from ai.ml.video_detector import get_video_detector
+        except ImportError as exc:
+            raise NotConfiguredError(f"Cannot import video_detector: {exc}")
+
+        detector = get_video_detector()
+        ct = ctx.content_type.lower()
+
+        # ── Image mode (single frame) ──────────────────────────────────────
+        if ct.startswith("image/"):
+            frame_result = detector.detect_frame(ctx.file_path)
+            prob = frame_result.get("fake_probability", 0.0)
+            verdict_str = frame_result.get("verdict", "Unknown")
+            severity = _severity(prob)
+            findings = [
+                {
+                    "indicator": "Deepfake Face Detection (Single Frame)",
+                    "score": prob,
+                    "verdict": verdict_str,
+                    "confidence": frame_result.get("confidence", "Low"),
+                    "face_detected": frame_result.get("face_detected", False),
+                    "explanation": (
+                        f"AuthentiQ EfficientNet-B0 + MTCNN: P(fake)={prob:.4f}. "
+                        f"Verdict: {verdict_str}. "
+                        f"Face detected: {frame_result.get('face_detected', False)}."
+                    ),
+                }
+            ]
+            return DetectorResult(
+                adapter_key=self.ADAPTER_KEY,
+                model_name="AuthentiQ EfficientNet-B0 + MTCNN (Image Mode)",
+                model_version=detector.meta.get("model_version", "1.0.0"),
+                provider="AuthentiQ Local Model",
+                is_configured=True,
+                score=prob,
+                severity=severity,
+                findings=findings,
+                limitations=[
+                    "Image deepfake detection works best when a face is clearly visible.",
+                    "Score is probabilistic — not admissible as forensic proof.",
+                    "Model fine-tuned on DFDC dataset; other styles may underperform.",
+                ],
+                supports_frame_refs=False,
+            )
+
+        # ── Video mode ─────────────────────────────────────────────────────
+        result = detector.detect_video(ctx.file_path)
+        prob = result.fake_probability
+        severity = _severity(prob)
+
+        frame_refs = [
+            {
+                "frame_index": fr.frame_index,
+                "fake_probability": fr.fake_probability,
+                "verdict": fr.verdict,
+                "confidence": fr.confidence,
+                "face_detected": fr.face_detected,
+            }
+            for fr in result.frame_results
+        ]
+
+        findings = [
+            {
+                "indicator": "Video Deepfake Detection",
+                "score": prob,
+                "verdict": result.verdict,
+                "confidence_level": result.confidence_level,
+                "total_frames_sampled": result.total_frames_sampled,
+                "faces_detected": result.faces_detected,
+                "aggregation_method": result.aggregation_method,
+                "frame_references": frame_refs,
+                "explanation": (
+                    f"AuthentiQ EfficientNet-B0 + MTCNN analysed {result.total_frames_sampled} "
+                    f"frames ({result.faces_detected} with detected faces). "
+                    f"Aggregated P(fake)={prob:.4f} via {result.aggregation_method}. "
+                    f"Verdict: {result.verdict} ({result.confidence_level})."
+                ),
+            }
+        ]
+
+        return DetectorResult(
+            adapter_key=self.ADAPTER_KEY,
+            model_name="AuthentiQ EfficientNet-B0 + MTCNN (Video Mode)",
+            model_version=result.model_version,
+            provider="AuthentiQ Local Model",
+            is_configured=True,
+            score=prob,
+            severity=severity,
+            findings=findings,
+            limitations=[
+                "Score is an aggregated probabilistic estimate — not admissible as forensic proof.",
+                "Detection quality degrades with low-resolution or heavily-compressed video.",
+                "Model fine-tuned on DFDC dataset; other deepfake styles may have lower accuracy.",
+                "Frame sampling (default 16 frames) may miss short deepfake segments.",
+            ],
+            supports_frame_refs=True,
+        )
+
+
+def _severity(prob: float) -> str:
+    if prob >= 0.70:
+        return "high"
+    if prob >= 0.40:
+        return "medium"
+    if prob > 0.0:
+        return "low"
+    return "inconclusive"
+
 
 
 class VideoManipulationAdapter(BaseDetectorAdapter):

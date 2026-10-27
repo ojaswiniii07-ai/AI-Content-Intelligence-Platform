@@ -408,3 +408,14 @@ def get_video_detector() -> AuthentiQVideoDetector:
     if _instance is None:
         _instance = AuthentiQVideoDetector()
     return _instance
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        video_path = sys.argv[1]
+        n_frames = int(sys.argv[2]) if len(sys.argv) > 2 else 16
+        detector = get_video_detector()
+        result = detector.detect_video(video_path, n_frames=n_frames)
+        print(json.dumps(result.to_dict()))
+

@@ -137,3 +137,49 @@ class SimulatorResponse(BaseModel):
     confusion_matrix: ConfusionMatrix
     recommendation: str
     caveat: str
+
+
+# --- Video Deepfake Detection Schemas ---
+
+class FrameAnalysisResult(BaseModel):
+    """Per-frame result from the local deepfake model."""
+    frame_index: int
+    fake_probability: float
+    verdict: str           # Fake | Real | No Face
+    confidence: str        # High | Medium | Low
+    face_detected: bool
+
+
+class VideoDeepfakeRequest(BaseModel):
+    """
+    Request body for /analysis/video-deepfake.
+    Accepts an upload_id (returned by POST /media/upload) or a raw file path
+    for testing.
+    """
+    upload_id: Optional[str] = None
+    file_path: Optional[str] = None   # Absolute server-side path (for integration tests)
+    n_frames: int = Field(default=16, ge=1, le=64, description="Number of frames to sample")
+
+    @model_validator(mode="after")
+    def require_one_source(self) -> "VideoDeepfakeRequest":
+        if not self.upload_id and not self.file_path:
+            raise ValueError("Provide either upload_id or file_path")
+        return self
+
+
+class VideoDeepfakeResponse(BaseModel):
+    """Full response from the local EfficientNet-B0 + MTCNN video deepfake detector."""
+    id: str
+    fake_probability: float           # 0.0 – 1.0
+    overall_score: float              # 0.0 – 100.0
+    verdict: str                      # e.g. "Likely Deepfake"
+    confidence_level: str             # e.g. "High Confidence"
+    model_version: str
+    total_frames_sampled: int
+    faces_detected: int
+    frame_results: List[FrameAnalysisResult]
+    aggregation_method: str
+    adapter: str                      # "local_video_deepfake_v1"
+    caveat: str
+    analyzed_at: datetime
+

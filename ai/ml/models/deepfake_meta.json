@@ -1,0 +1,20 @@
+{
+  "model_version": "1.0.0",
+  "model_name": "efficientnet-b0",
+  "architecture": "EfficientNet-B0 + Custom Head",
+  "task": "video_deepfake_detection",
+  "image_size": 224,
+  "n_frames": 16,
+  "margin": 40,
+  "min_face_size": 60,
+  "val_auc": 1.0,
+  "val_accuracy": 1.0,
+  "threshold": 0.5,
+  "training_phases": [
+    "Phase 1: Head-only (3 epochs, LR=0.001)",
+    "Phase 2: Full fine-tune (5 epochs, LR=3e-05)"
+  ],
+  "face_detector": "MTCNN (facenet-pytorch)",
+  "backbone_pretrained_on": "ImageNet",
+  "reference": "https://www.kaggle.com/code/muhammadhusban/deepfake-detection/notebook"
+}

@@ -154,6 +154,41 @@ export const mediaAnalysisApi = {
   },
 }
 
+// ── Video Deepfake Detection API (Local Model — no API key needed) ─────────────
+export const videoDeepfakeApi = {
+  /**
+   * Two-step convenience: upload file + immediately run deepfake detection.
+   * Returns {upload: MediaUploadResponse, result: VideoDeepfakeResponse}
+   */
+  analyzeVideo: async (file, nFrames = 16) => {
+    // Step 1: Upload
+    const formData = new FormData()
+    formData.append('file', file)
+    const uploadRes = await request('/media/upload', { method: 'POST', body: formData })
+    const uploadId = uploadRes?.data?.upload_id
+    if (!uploadId) throw new Error('Upload failed — no upload_id returned')
+
+    // Step 2: Run local deepfake detection
+    const result = await request('/analysis/video-deepfake', {
+      method: 'POST',
+      body: JSON.stringify({ upload_id: uploadId, n_frames: nFrames }),
+    })
+    return { upload: uploadRes.data, result: result.data }
+  },
+
+  /**
+   * Run local deepfake detection on an already-uploaded file.
+   */
+  detectByUploadId: async (uploadId, nFrames = 16) => {
+    return request('/analysis/video-deepfake', {
+      method: 'POST',
+      body: JSON.stringify({ upload_id: uploadId, n_frames: nFrames }),
+    })
+  },
+}
+
+
+
 // ── FP/FN Simulator Endpoints ─────────────────────────────────────────────────
 export const simulatorApi = {
   simulate: async (threshold, modelVersion = 'v2.4', dataset = 'edu-2400') => {
@@ -214,6 +249,12 @@ export const auditApi = {
   },
   recordOverride: async (submissionId, data) => {
     return request(`/reviews/${submissionId}/override`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+  recordEvent: async (data) => {
+    return request('/audit/events', {
       method: 'POST',
       body: JSON.stringify(data),
     })

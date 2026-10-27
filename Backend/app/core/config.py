@@ -53,10 +53,8 @@ class Settings(BaseSettings):
             if url.startswith("postgresql://"):
                 url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
             return url
-        return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
+        # Default to local SQLite with aiosqlite for standalone, zero-dependency execution
+        return "sqlite+aiosqlite:///./contentiq.db"
 
     @property
     def sync_database_url(self) -> str:

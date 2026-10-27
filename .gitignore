@@ -48,3 +48,5 @@ Backend/uploads/*
 
 
 ai/ml/models/demo_faces/
+*.db
+*.sqlite

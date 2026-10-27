@@ -12,18 +12,24 @@ from app.core.config import settings
 from app.core.logging import logger
 
 # Configure async engine
-# pool_pre_ping checks if connection is alive before using it from the pool
 connect_args = {}
-if "postgresql" in settings.async_database_url:
-    connect_args["timeout"] = 2  # asyncpg connection timeout in seconds
+engine_kwargs = {
+    "echo": False,
+    "pool_pre_ping": True,
+}
+
+if "sqlite" in settings.async_database_url:
+    connect_args["check_same_thread"] = False
+else:
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+    if "postgresql" in settings.async_database_url:
+        connect_args["timeout"] = 2
 
 engine = create_async_engine(
     settings.async_database_url,
-    echo=settings.DEBUG and False,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
     connect_args=connect_args,
+    **engine_kwargs,
 )
 
 # Async session factory
