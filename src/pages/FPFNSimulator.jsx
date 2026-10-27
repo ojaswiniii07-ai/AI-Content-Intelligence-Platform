@@ -1,35 +1,41 @@
 import { useState } from 'react'
+import { simulatorApi } from '../services/api'
 
 export default function FPFNSimulator({ showToast }) {
   const [model, setModel] = useState('v2.4')
   const [threshold, setThreshold] = useState(0.60)
   const [dataset, setDataset] = useState('edu-2400')
   const [simulating, setSimulating] = useState(false)
+  const [apiMetrics, setApiMetrics] = useState(null)
 
   // Dynamically calculate metrics based on threshold
   // Conservative threshold (higher): lower FP, higher FN, higher precision, lower recall
   // Aggressive threshold (lower): higher FP, lower FN, lower precision, higher recall
-  const fpRate = (4.1 * Math.pow(1 - threshold + 0.3, 1.8)).toFixed(1)
-  const fnRate = (8.7 * Math.pow(threshold + 0.2, 1.6)).toFixed(1)
-  const precision = Math.min(99.4, (91.3 + (threshold - 0.6) * 12)).toFixed(1)
-  const recall = Math.max(72.0, (94.7 - (threshold - 0.6) * 22)).toFixed(1)
+  const fpRate = apiMetrics?.false_positive_rate ?? (4.1 * Math.pow(1 - threshold + 0.3, 1.8)).toFixed(1)
+  const fnRate = apiMetrics?.false_negative_rate ?? (8.7 * Math.pow(threshold + 0.2, 1.6)).toFixed(1)
+  const precision = apiMetrics?.precision ?? Math.min(99.4, (91.3 + (threshold - 0.6) * 12)).toFixed(1)
+  const recall = apiMetrics?.recall ?? Math.max(72.0, (94.7 - (threshold - 0.6) * 22)).toFixed(1)
 
   // Confusion matrix counts for 2,400 labeled samples (1,200 Human, 1,200 AI)
-  const totalSamples = 2400
-  const actualHuman = 1200
-  const actualAI = 1200
+  const totalSamples = apiMetrics?.confusion_matrix?.total_samples ?? 2400
+  const falsePositives = apiMetrics?.confusion_matrix?.false_positives ?? Math.round((1200 * parseFloat(fpRate)) / 100)
+  const trueNegatives = apiMetrics?.confusion_matrix?.true_negatives ?? (1200 - falsePositives)
+  const falseNegatives = apiMetrics?.confusion_matrix?.false_negatives ?? Math.round((1200 * parseFloat(fnRate)) / 100)
+  const truePositives = apiMetrics?.confusion_matrix?.true_positives ?? (1200 - falseNegatives)
 
-  const falsePositives = Math.round((actualHuman * parseFloat(fpRate)) / 100)
-  const trueNegatives = actualHuman - falsePositives
-  const falseNegatives = Math.round((actualAI * parseFloat(fnRate)) / 100)
-  const truePositives = actualAI - falseNegatives
-
-  const handleRunSim = () => {
+  const handleRunSim = async () => {
     setSimulating(true)
-    setTimeout(() => {
+    try {
+      const res = await simulatorApi.simulate(threshold, model, dataset)
+      if (res?.data) {
+        setApiMetrics(res.data)
+        showToast(`Simulation updated from API (threshold ${threshold.toFixed(2)})`, 'success')
+      }
+    } catch {
+      showToast(`Simulation updated locally for threshold ${threshold.toFixed(2)} on ${totalSamples} samples`, 'success')
+    } finally {
       setSimulating(false)
-      showToast(`Simulation updated for threshold ${threshold.toFixed(2)} on ${totalSamples} samples`, 'success')
-    }, 700)
+    }
   }
 
   return (

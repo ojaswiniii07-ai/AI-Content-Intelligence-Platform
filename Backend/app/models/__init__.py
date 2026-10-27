@@ -8,6 +8,7 @@ from app.models.review import Review
 from app.models.audit import AuditEvent
 from app.models.batch import Batch
 from app.models.integration import Integration
+from app.models.webhook import WebhookEndpoint, WebhookDelivery
 
 __all__ = [
     "Base",
@@ -21,4 +22,6 @@ __all__ = [
     "AuditEvent",
     "Batch",
     "Integration",
+    "WebhookEndpoint",
+    "WebhookDelivery",
 ]

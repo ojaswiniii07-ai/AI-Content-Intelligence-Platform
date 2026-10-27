@@ -42,3 +42,7 @@ Backend/.env
 dataset/
 dataset/*
 
+# Uploads
+Backend/uploads/*
+!Backend/uploads/.gitkeep
+

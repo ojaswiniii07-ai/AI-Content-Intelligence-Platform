@@ -61,7 +61,7 @@ export default function Sidebar({ activePage, onNavigate }) {
             <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
           </svg>
         </div>
-        <span className="logo-text">ContentIQ</span>
+        <span className="logo-text">AuthentiQ</span>
       </div>
 
       <nav className="sidebar-nav">

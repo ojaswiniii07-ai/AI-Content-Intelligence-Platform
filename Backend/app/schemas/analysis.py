@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 # --- Text Analysis Schemas ---
@@ -78,9 +78,10 @@ class MediaAnomaly(BaseModel):
 
 
 class MediaAnalysisRequest(BaseModel):
-    file_name: str
+    file_name: Optional[str] = "media_sample.mp4"
     file_url: Optional[str] = None
-    content_type: str = Field(pattern="^(image|video|audio)$")
+    content_type: Optional[str] = None
+    media_type: Optional[str] = None
     detectors: List[str] = [
         "Face Blend Artifacts",
         "Lighting Inconsistency",
@@ -88,6 +89,14 @@ class MediaAnalysisRequest(BaseModel):
         "Audio/Video Sync",
     ]
     workspace_id: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_content_type(self) -> "MediaAnalysisRequest":
+        ct = self.content_type or self.media_type or "video"
+        if ct not in ("image", "video", "audio"):
+            ct = "video"
+        self.content_type = ct
+        return self
 
 
 class MediaAnalysisResponse(BaseModel):

@@ -67,3 +67,23 @@ async def get_current_admin(
     if current_user.role != "admin" and not current_user.is_superuser:
         raise ForbiddenError("Administrative privileges required for this operation.")
     return current_user
+
+
+def require_roles(*allowed_roles: str):
+    """
+    Dependency factory to enforce role-based access control.
+    Superusers and admin are always permitted.
+    Ordinary users without an allowed role receive ForbiddenError (403).
+    """
+    async def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        user_role = getattr(current_user, "role", "user")
+        if current_user.is_superuser or user_role == "admin":
+            return current_user
+        if user_role not in allowed_roles:
+            raise ForbiddenError(
+                f"Access restricted to roles: {', '.join(allowed_roles)}. Your role is '{user_role}'."
+            )
+        return current_user
+
+    return role_checker
+

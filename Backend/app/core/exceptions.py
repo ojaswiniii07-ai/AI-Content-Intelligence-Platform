@@ -19,12 +19,28 @@ class AppException(Exception):
 
 
 class NotFoundError(AppException):
-    def __init__(self, resource: str, identifier: Any):
+    def __init__(self, resource_or_message: str, identifier: Any = None):
+        if identifier is not None:
+            message = f"{resource_or_message} with identifier '{identifier}' was not found."
+            details = {"resource": resource_or_message, "identifier": str(identifier)}
+        else:
+            message = resource_or_message
+            details = {}
         super().__init__(
-            message=f"{resource} with identifier '{identifier}' was not found.",
+            message=message,
             status_code=404,
             error_code="NOT_FOUND",
-            details={"resource": resource, "identifier": str(identifier)},
+            details=details,
+        )
+
+
+class ValidationError(AppException):
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            message=message,
+            status_code=422,
+            error_code="VALIDATION_ERROR",
+            details=details,
         )
 
 
