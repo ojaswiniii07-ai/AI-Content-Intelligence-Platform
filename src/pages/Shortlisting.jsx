@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { shortlistingApi, auditApi } from '../services/api'
 
+// Memphis Decorative SVG Squiggle
+const MemphisSquiggle = ({ color = '#FF1493', width = 120, height = 18 }) => (
+  <svg width={width} height={height} viewBox="0 0 120 18" fill="none" style={{ display: 'inline-block' }}>
+    <path
+      d="M2 9C12 2 18 16 28 9C38 2 44 16 54 9C64 2 70 16 80 9C90 2 96 16 106 9C112 5 116 11 118 9"
+      stroke={color}
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 const initialProjects = [
   { id: 'p1', name: 'Hackathon 2026 — Final Round', count: 84, status: 'In progress', color: 'purple', rubric: 'Engineering & Architecture Rubric v2' },
   { id: 'p2', name: 'Engineering Hiring Q4', count: 231, status: 'Reviewing', color: 'cyan', rubric: 'Senior Systems Engineering Rubric' },
@@ -232,11 +245,11 @@ export default function Shortlisting({ showToast }) {
     if (mode === 'hackathon') {
       setActiveProjectId('p1')
       setWeights({ relevance: 35, reasoning: 35, originality: 30 })
-      showToast('Switched mode to Hackathon Project Shortlister (Rubric: Engineering & Architecture)', 'info')
+      showToast('Switched mode to Hackathon Project Shortlister', 'info')
     } else {
       setActiveProjectId('p2')
       setWeights({ relevance: 35, reasoning: 35, originality: 30 })
-      showToast('Switched mode to Resume & Candidate Shortlister (Rubric: Senior Systems Engineering)', 'info')
+      showToast('Switched mode to Resume & Candidate Shortlister', 'info')
     }
   }
 
@@ -398,7 +411,6 @@ export default function Shortlisting({ showToast }) {
     return parseFloat(score.toFixed(1))
   }
 
-  // Handle Weight Change
   const handleWeightChange = (key, val) => {
     const num = Math.max(5, Math.min(80, parseInt(val) || 0))
     const updatedWeights = { ...weights, [key]: num }
@@ -409,7 +421,6 @@ export default function Shortlisting({ showToast }) {
       total: computeWeightedScore(s, updatedWeights),
     }))
 
-    // Sort by new scores descending
     updated.sort((a, b) => b.total - a.total)
     const reRanked = updated.map((s, idx) => ({ ...s, rank: `#${idx + 1}` }))
     setSubmissions(reRanked)
@@ -417,7 +428,7 @@ export default function Shortlisting({ showToast }) {
       const active = reRanked.find((x) => x.id === selectedSub.id)
       if (active) setSelectedSub(active)
     }
-    showToast(`Rubric weights adjusted. Cohort re-ranked dynamically.`, 'info')
+    showToast('Rubric weights adjusted. Cohort re-ranked dynamically.', 'info')
   }
 
   const handleSort = (type) => {
@@ -461,7 +472,6 @@ export default function Shortlisting({ showToast }) {
     showToast(`Status updated to "${newStatus}" & signed into audit ledger`, 'success')
   }
 
-  // Batch action handlers
   const handleToggleSelectSub = (id) => {
     if (selectedSubIds.includes(id)) {
       setSelectedSubIds(selectedSubIds.filter((x) => x !== id))
@@ -490,7 +500,6 @@ export default function Shortlisting({ showToast }) {
     setSelectedSubIds([])
   }
 
-  // Compare candidates toggle
   const handleToggleCompare = (id) => {
     if (comparedSubIds.includes(id)) {
       setComparedSubIds(comparedSubIds.filter((x) => x !== id))
@@ -511,7 +520,6 @@ export default function Shortlisting({ showToast }) {
     setIsCompareModalOpen(true)
   }
 
-  // Filtered submissions
   const filteredSubmissions = submissions.filter((s) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false
     if (searchQuery.trim()) {
@@ -530,216 +538,1039 @@ export default function Shortlisting({ showToast }) {
   const sub2 = submissions.find((s) => s.id === comparedSubIds[1])
 
   return (
-    <div className="shortlist-page">
+    <div className="memphis-shortlisting-studio">
+      {/* ── MEMPHIS '81 VIBRANT POSTMODERN STYLES ── */}
+      <style>{`
+        .memphis-shortlisting-studio {
+          width: 100%;
+          font-family: var(--font-primary, 'Poppins', sans-serif);
+          position: relative;
+        }
+
+        /* ── Header ── */
+        .ms-page-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 24px;
+          border-bottom: 3.5px solid #121316;
+          padding-bottom: 20px;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .ms-title-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .ms-tag-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .ms-stamp {
+          font-size: 0.74rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 5px 14px;
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          border-radius: 0px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-stamp:hover {
+          transform: translateY(-2px) rotate(2deg);
+          box-shadow: 5.5px 5.5px 0px #121316;
+        }
+        .ms-stamp-yellow { background: #FFD700; color: #121316; transform: rotate(-1.5deg); }
+        .ms-stamp-pink   { background: #FF1493; color: #FFFFFF; transform: rotate(1.5deg); }
+        .ms-stamp-blue   { background: #0066FF; color: #FFFFFF; transform: rotate(-0.5deg); }
+        .ms-stamp-green  { background: #00E5A0; color: #121316; transform: rotate(1deg); }
+
+        .ms-page-title {
+          font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+          font-weight: 900;
+          color: var(--text-primary);
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+          line-height: 1.15;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .ms-page-subtitle {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          margin: 0;
+          max-width: 720px;
+          line-height: 1.5;
+        }
+
+        .ms-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .ms-btn-action {
+          font-family: inherit;
+          font-size: 0.84rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: 11px 20px;
+          border: 2.5px solid #121316;
+          box-shadow: 4px 4px 0px #121316;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-btn-pink {
+          background: #FF1493;
+          color: #FFFFFF;
+        }
+        .ms-btn-pink:hover:not(:disabled) {
+          background: #FFD700;
+          color: #121316;
+          transform: translate(-3px, -3px) rotate(1deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+        .ms-btn-pink:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .ms-btn-yellow {
+          background: #FFD700;
+          color: #121316;
+        }
+        .ms-btn-yellow:hover {
+          background: #00E5A0;
+          transform: translate(-3px, -3px) rotate(-1deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+
+        .ms-btn-blue {
+          background: #0066FF;
+          color: #FFFFFF;
+        }
+        .ms-btn-blue:hover {
+          background: #FF1493;
+          transform: translate(-3px, -3px) rotate(1.5deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+
+        /* ── Decoupled Policy Banner with Hover Pop ── */
+        .ms-policy-banner {
+          background: #FFD700;
+          color: #121316;
+          border: 3.5px solid #121316;
+          box-shadow: 6px 6px 0px #121316;
+          padding: 16px 22px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          transform: rotate(-0.3deg);
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-policy-banner:hover {
+          transform: translateY(-4px) rotate(0.4deg);
+          box-shadow: 10px 10px 0px #121316;
+        }
+        .ms-policy-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .ms-policy-icon-box {
+          width: 40px;
+          height: 40px;
+          background: #121316;
+          color: #FFD700;
+          border: 2.5px solid #121316;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transform: rotate(-3deg);
+          box-shadow: 2px 2px 0px #FF1493;
+          transition: all 0.18s ease;
+        }
+        .ms-policy-banner:hover .ms-policy-icon-box {
+          transform: rotate(6deg) scale(1.08);
+        }
+        .ms-policy-title {
+          font-size: 0.96rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin: 0 0 3px;
+        }
+        .ms-policy-desc {
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin: 0;
+          opacity: 0.95;
+          line-height: 1.45;
+        }
+        .ms-policy-badge {
+          background: #FFFFFF;
+          color: #121316;
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 7px 16px;
+          font-size: 0.76rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          white-space: nowrap;
+          transform: rotate(1deg);
+          transition: all 0.15s ease;
+        }
+        .ms-policy-badge:hover {
+          transform: scale(1.05) rotate(-1deg);
+          box-shadow: 5px 5px 0px #121316;
+        }
+
+        /* ── CSV Ingestion Card with Hover Pop ── */
+        .ms-ingestion-card {
+          background: var(--bg-card, #FFFFFF);
+          border: 3.5px solid #121316;
+          box-shadow: 6px 6px 0px #121316;
+          padding: 22px;
+          margin-bottom: 24px;
+          border-top: 8px solid #0066FF;
+          position: relative;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-ingestion-card:hover {
+          transform: translateY(-4px) rotate(-0.2deg);
+          box-shadow: 10px 10px 0px #121316;
+        }
+        .ms-ingestion-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 18px;
+          flex-wrap: wrap;
+          gap: 14px;
+        }
+        .ms-ingestion-title {
+          font-size: 1.1rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          color: var(--text-primary);
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .ms-mode-pill-select {
+          background: #FFD700;
+          color: #121316;
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 6px 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.82rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          transform: rotate(-1deg);
+          transition: all 0.15s ease;
+        }
+        .ms-mode-pill-select:hover {
+          transform: translateY(-2px) rotate(1deg);
+          box-shadow: 5.5px 5.5px 0px #121316;
+        }
+        .ms-select-input {
+          background: transparent;
+          border: none;
+          font-family: inherit;
+          font-size: 0.84rem;
+          font-weight: 900;
+          color: #121316;
+          outline: none;
+          cursor: pointer;
+          text-transform: uppercase;
+        }
+
+        .ms-ingestion-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.6fr;
+          gap: 20px;
+        }
+
+        .ms-dropzone {
+          border: 3px dashed #121316;
+          background: var(--bg-surface, #F8F9FA);
+          box-shadow: 4px 4px 0px #121316;
+          padding: 24px 18px;
+          text-align: center;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-dropzone:hover {
+          border-color: #FF1493;
+          background: rgba(255, 20, 147, 0.08);
+          transform: translateY(-3px) rotate(0.8deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+        .ms-dropzone-title {
+          font-size: 0.92rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          color: var(--text-primary);
+          margin: 0;
+        }
+        .ms-dropzone-desc {
+          font-size: 0.76rem;
+          color: var(--text-secondary);
+          font-weight: 600;
+          margin: 0;
+        }
+
+        .ms-mock-panel {
+          background: var(--bg-surface, #F8F9FA);
+          border: 2.5px solid #121316;
+          box-shadow: 4px 4px 0px #121316;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 14px;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-mock-panel:hover {
+          transform: translateY(-3px) rotate(-0.3deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+
+        .ms-mock-buttons-row {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .ms-mock-btn {
+          font-family: inherit;
+          font-size: 0.8rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          padding: 9px 18px;
+          border: 2px solid #121316;
+          background: var(--bg-card, #FFFFFF);
+          color: var(--text-primary);
+          box-shadow: 3.5px 3.5px 0px #121316;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-mock-btn:hover {
+          background: #FFD700;
+          color: #121316;
+          transform: translate(-3px, -3px) rotate(1deg);
+          box-shadow: 6px 6px 0px #121316;
+        }
+        .ms-mock-btn.active {
+          background: #FF1493;
+          color: #FFFFFF;
+          box-shadow: 5px 5px 0px #121316;
+          transform: translate(-2px, -2px) rotate(-1deg);
+        }
+
+        .ms-download-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-top: 2px solid #121316;
+          padding-top: 12px;
+          font-size: 0.76rem;
+          font-weight: 800;
+          color: var(--text-muted);
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        .ms-dl-link {
+          color: #0066FF;
+          text-decoration: none;
+          font-weight: 900;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          text-transform: uppercase;
+          transition: all 0.15s ease;
+        }
+        .ms-dl-link:hover {
+          text-decoration: underline;
+          color: #FF1493;
+          transform: translateX(2px);
+        }
+
+        /* ── Rubric Tuner Drawer with Hover Pop ── */
+        .ms-tuner-card {
+          background: #FFD700;
+          color: #121316;
+          border: 3.5px solid #121316;
+          box-shadow: 6px 6px 0px #121316;
+          padding: 22px;
+          margin-bottom: 24px;
+          position: relative;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-tuner-card:hover {
+          transform: translateY(-4px) rotate(0.3deg);
+          box-shadow: 10px 10px 0px #121316;
+        }
+        .ms-tuner-sliders {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          margin-top: 16px;
+        }
+        .ms-slider-box {
+          background: #FFFFFF;
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-slider-box:hover {
+          transform: translateY(-3px) rotate(0.8deg);
+          box-shadow: 6.5px 6.5px 0px #121316;
+        }
+        .ms-slider-head {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.82rem;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        /* ── Cohort Tabs Bar ── */
+        .ms-cohort-tabs {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 22px;
+          overflow-x: auto;
+          padding-bottom: 6px;
+        }
+        .ms-cohort-tab-btn {
+          font-family: inherit;
+          font-size: 0.82rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          padding: 10px 20px;
+          border: 2.5px solid #121316;
+          background: var(--bg-card, #FFFFFF);
+          color: var(--text-primary);
+          box-shadow: 4px 4px 0px #121316;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          white-space: nowrap;
+          transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-cohort-tab-btn:hover:not(.active) {
+          background: #FFD700;
+          color: #121316;
+          transform: translate(-3px, -3px) rotate(0.5deg);
+          box-shadow: 6.5px 6.5px 0px #121316;
+        }
+        .ms-cohort-tab-btn.active {
+          background: #FF1493;
+          color: #FFFFFF;
+          box-shadow: 5px 5px 0px #121316;
+          transform: translate(-2px, -2px) rotate(-1deg);
+        }
+        .ms-cohort-tab-count {
+          background: #FFFFFF;
+          color: #121316;
+          border: 1.5px solid #121316;
+          font-size: 0.7rem;
+          padding: 2px 8px;
+          font-weight: 900;
+        }
+
+        /* ── Sticky Batch Selection Bar ── */
+        .ms-batch-bar {
+          background: #121316;
+          color: #FFFFFF;
+          border: 3px solid #FFD700;
+          box-shadow: 6px 6px 0px #121316;
+          padding: 14px 22px;
+          margin-bottom: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-batch-bar:hover {
+          transform: translateY(-3px);
+          box-shadow: 9px 9px 0px #121316;
+        }
+
+        /* ── Toolbar with Hover Pop ── */
+        .ms-toolbar {
+          background: var(--bg-surface, #F8F9FA);
+          border: 2.5px solid #121316;
+          box-shadow: 4px 4px 0px #121316;
+          padding: 14px 20px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-toolbar:hover {
+          transform: translateY(-3px) rotate(0.2deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+        .ms-filter-pills {
+          display: flex;
+          gap: 8px;
+        }
+        .ms-filter-pill {
+          font-family: inherit;
+          font-size: 0.78rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          padding: 7px 16px;
+          border: 2px solid #121316;
+          background: var(--bg-card, #FFFFFF);
+          color: var(--text-primary);
+          box-shadow: 3px 3px 0px #121316;
+          cursor: pointer;
+          transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-filter-pill:hover:not(.active) {
+          background: #FFD700;
+          color: #121316;
+          transform: translate(-2px, -2px);
+          box-shadow: 5px 5px 0px #121316;
+        }
+        .ms-filter-pill.active {
+          background: #FF1493;
+          color: #FFFFFF;
+          box-shadow: 4px 4px 0px #121316;
+          transform: translate(-1px, -1px);
+        }
+
+        .ms-search-box {
+          display: flex;
+          gap: 10px;
+          flex: 1;
+          max-width: 480px;
+        }
+
+        /* ── Main Layout: Table (Left) + Drawer (Right) ── */
+        .ms-layout-grid {
+          display: grid;
+          grid-template-columns: 1.35fr 1fr;
+          gap: 24px;
+          align-items: start;
+        }
+
+        /* ── Table Box with Hover Pop ── */
+        .ms-table-box {
+          background: var(--bg-card, #FFFFFF);
+          border: 3.5px solid #121316;
+          box-shadow: 6px 6px 0px #121316;
+          overflow: hidden;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-table-box:hover {
+          transform: translateY(-4px) rotate(0.2deg);
+          box-shadow: 10px 10px 0px #121316;
+        }
+        .ms-table-head {
+          padding: 16px 20px;
+          background: #FFD700;
+          color: #121316;
+          border-bottom: 2.5px solid #121316;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ms-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.83rem;
+        }
+        .ms-table th {
+          background: var(--bg-surface, #F8F9FA);
+          color: var(--text-primary);
+          padding: 12px 14px;
+          text-align: left;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 2.5px solid #121316;
+          border-right: 1.5px solid #121316;
+        }
+        .ms-table td {
+          padding: 14px;
+          border-bottom: 2px solid #121316;
+          border-right: 1.5px solid #121316;
+          color: var(--text-primary);
+          font-weight: 600;
+        }
+        .ms-table tr {
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .ms-table tr:hover td {
+          background: rgba(255, 215, 0, 0.18);
+        }
+        .ms-table tr.selected td {
+          background: rgba(255, 20, 147, 0.12);
+        }
+
+        /* ── Drawer with Hover Pop ── */
+        .ms-drawer {
+          background: var(--bg-card, #FFFFFF);
+          border: 3.5px solid #121316;
+          box-shadow: 6px 6px 0px #121316;
+          padding: 22px;
+          position: sticky;
+          top: 90px;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-drawer:hover {
+          transform: translateY(-4px) rotate(-0.3deg);
+          box-shadow: 10px 10px 0px #121316;
+        }
+
+        .ms-drawer-header {
+          border-bottom: 2.5px solid #121316;
+          padding-bottom: 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .ms-score-card-pair {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .ms-score-tile {
+          background: var(--bg-surface, #F8F9FA);
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-score-tile:hover {
+          transform: translateY(-3px) rotate(1deg);
+          box-shadow: 6.5px 6.5px 0px #121316;
+        }
+        .ms-tile-val {
+          font-size: 1.6rem;
+          font-weight: 900;
+          color: var(--text-primary);
+          line-height: 1;
+        }
+
+        .ms-rubric-breakdown-box {
+          background: var(--bg-surface, #F8F9FA);
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-rubric-breakdown-box:hover {
+          transform: translateY(-3px) rotate(-0.5deg);
+          box-shadow: 6.5px 6.5px 0px #121316;
+        }
+
+        .ms-llm-eval-box {
+          background: rgba(0, 102, 255, 0.05);
+          border: 2.5px solid #0066FF;
+          box-shadow: 4px 4px 0px #0066FF;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-llm-eval-box:hover {
+          transform: translateY(-3px) rotate(0.5deg);
+          box-shadow: 7px 7px 0px #0066FF;
+        }
+
+        .ms-decision-box {
+          background: var(--bg-surface, #F8F9FA);
+          border: 2.5px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-decision-box:hover {
+          transform: translateY(-3px) rotate(0.4deg);
+          box-shadow: 6.5px 6.5px 0px #121316;
+        }
+
+        .ms-decision-btn-row {
+          display: flex;
+          gap: 8px;
+        }
+        .ms-decide-btn {
+          flex: 1;
+          font-family: inherit;
+          font-size: 0.8rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          padding: 10px;
+          border: 2px solid #121316;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-decide-btn:hover {
+          transform: translate(-3px, -3px);
+          box-shadow: 6px 6px 0px #121316;
+        }
+        .ms-decide-shortlist { background: #00E5A0; color: #121316; }
+        .ms-decide-flag      { background: #FFD700; color: #121316; }
+        .ms-decide-reject    { background: #FF3333; color: #FFFFFF; }
+
+        /* ── Form Inputs & Selects with Hard Drop Shadows ── */
+        .form-input, .form-select {
+          background: var(--bg-card, #FFFFFF);
+          border: 2.5px solid #121316;
+          border-radius: 0px;
+          color: var(--text-primary);
+          font-family: inherit;
+          font-size: 0.86rem;
+          font-weight: 700;
+          padding: 10px 14px;
+          outline: none;
+          box-shadow: 3.5px 3.5px 0px #121316;
+          transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .form-input:hover, .form-select:hover {
+          box-shadow: 6px 6px 0px #121316;
+          transform: translateY(-2px);
+        }
+        .form-input:focus, .form-select:focus {
+          border-color: #0066FF;
+          box-shadow: 5px 5px 0px #0066FF;
+          transform: translate(-2px, -2px);
+        }
+
+        /* ── Status Pills with Solid Border & Pop Hover ── */
+        .status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.72rem;
+          font-weight: 900;
+          padding: 4px 10px;
+          border-radius: 0px;
+          border: 2px solid #121316;
+          box-shadow: 2.5px 2.5px 0px #121316;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .status-pill:hover {
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 4.5px 4.5px 0px #121316;
+        }
+
+        /* ── Score Bars with Hard Memphis Border ── */
+        .score-bar-outer {
+          height: 9px;
+          background: var(--bg-base, #FAFAFA);
+          border: 2px solid #121316;
+          border-radius: 0px;
+          overflow: hidden;
+          box-shadow: 1.5px 1.5px 0px #121316;
+          transition: all 0.15s ease;
+        }
+        .score-bar-outer:hover {
+          box-shadow: 3px 3px 0px #121316;
+          transform: translateY(-1px);
+        }
+
+        /* ── Icon Action Buttons ── */
+        .icon-btn {
+          width: 34px;
+          height: 34px;
+          border: 2px solid #121316;
+          background: var(--bg-card, #FFFFFF);
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 3px 3px 0px #121316;
+          transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .icon-btn:hover {
+          transform: translate(-2px, -2px) rotate(2deg);
+          box-shadow: 5px 5px 0px #121316;
+          background: #FFD700;
+          color: #121316;
+        }
+
+        /* ── Compare Modal with Hard Drop Shadow & Pop-up ── */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(18, 19, 22, 0.75);
+          backdrop-filter: blur(2px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 999;
+          padding: 20px;
+        }
+        .modal-box {
+          background: var(--bg-card, #FFFFFF);
+          border: 3.5px solid #121316;
+          box-shadow: 12px 12px 0px #121316;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-header {
+          padding: 16px 20px;
+          background: #FFD700;
+          color: #121316;
+          border-bottom: 3px solid #121316;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .modal-title {
+          font-size: 1.05rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+        .modal-body {
+          padding: 24px;
+        }
+        .modal-footer {
+          padding: 14px 24px;
+          border-top: 2.5px solid #121316;
+          display: flex;
+          justify-content: flex-end;
+          background: var(--bg-surface, #FAFAFA);
+        }
+        .ms-compare-card {
+          padding: 18px;
+          background: var(--bg-surface, #FAFAFA);
+          border: 2.5px solid #121316;
+          box-shadow: 4px 4px 0px #121316;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-compare-card:hover {
+          transform: translateY(-3px) rotate(0.5deg);
+          box-shadow: 7px 7px 0px #121316;
+        }
+        .ms-compare-delta {
+          margin-top: 18px;
+          padding: 14px 18px;
+          background: #FFD700;
+          color: #121316;
+          border: 2.5px solid #121316;
+          box-shadow: 4px 4px 0px #121316;
+          font-weight: 900;
+          font-size: 0.88rem;
+          text-transform: uppercase;
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .ms-compare-delta:hover {
+          transform: translateY(-2px);
+          box-shadow: 6px 6px 0px #121316;
+        }
+
+        @media (max-width: 1100px) {
+          .ms-layout-grid { grid-template-columns: 1fr; }
+          .ms-ingestion-grid { grid-template-columns: 1fr; }
+          .ms-tuner-sliders { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
       {/* ── Page Header ── */}
-      <div className="page-header" style={{ marginBottom: '20px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span className="sarvam-eyebrow-pill" style={{ padding: '2px 8px', fontSize: '0.68rem' }}>
-              DECOUPLED COHORT EVALUATION
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>· Merit-First Ranking</span>
+      <div className="ms-page-header">
+        <div className="ms-title-group">
+          <div className="ms-tag-row">
+            <span className="ms-stamp ms-stamp-yellow">Cohort Intelligence Engine</span>
+            <span className="ms-stamp ms-stamp-pink">Decoupled Merit Radar</span>
+            <span className="ms-stamp ms-stamp-blue">OpenRouter Gemma 4 31B</span>
           </div>
-          <h1 className="page-title">Candidate Evaluation &amp; Shortlisting Studio</h1>
-          <p className="page-subtitle">
-            Merit-based rubric scoring decoupled from AI detection flags. Submissions evaluated strictly on substance.
+          <h1 className="ms-page-title">
+            Candidate Evaluation &amp; Shortlisting Studio
+            <MemphisSquiggle color="#FFD700" width={110} height={16} />
+          </h1>
+          <p className="ms-page-subtitle">
+            Merit-based weighted rubric scoring decoupled from AI detection flags. Evaluate submissions strictly on intellectual substance, technical validation, and empirical rigor.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="ms-header-actions">
           <button
-            className="sarvam-btn-primary"
+            className="ms-btn-action ms-btn-pink"
             onClick={() => handleRunLlmEvaluation()}
             disabled={isEvaluating}
-            style={{
-              padding: '8px 16px',
-              fontSize: '0.8rem',
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-              border: 'none',
-              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#ffffff',
-              fontWeight: 600,
-              cursor: isEvaluating ? 'not-allowed' : 'pointer',
-              opacity: isEvaluating ? 0.75 : 1,
-            }}
-            title="Evaluate candidate submissions with google/gemma-4-31b-it:free via OpenRouter"
+            title="Evaluate candidate cohort with google/gemma-4-31b-it:free via OpenRouter"
           >
             {isEvaluating && !evaluatingCandidateId ? (
               <>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: '13px',
-                    height: '13px',
-                    border: '2px solid rgba(255,255,255,0.4)',
-                    borderTopColor: '#ffffff',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                  }}
-                />
-                <span>Evaluating Cohort (Gemma 4 31B)...</span>
+                <svg className="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M21 12a9 9 0 1 1-6.22-8.56"/>
+                </svg>
+                Evaluating Cohort (Gemma 4 31B)…
               </>
             ) : (
               <>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
-                <span>Run AI Evaluation (Gemma 4 31B)</span>
+                Run AI Evaluation (Gemma 4 31B)
               </>
             )}
           </button>
 
           {comparedSubIds.length === 2 && (
-            <button
-              className="sarvam-btn-primary"
-              onClick={openCompareModal}
-              style={{ padding: '8px 14px', fontSize: '0.78rem' }}
-            >
-              Compare 2 Candidates (Side-by-Side)
+            <button className="ms-btn-action ms-btn-blue" onClick={openCompareModal}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="2" y="3" width="9" height="18"/>
+                <rect x="13" y="3" width="9" height="18"/>
+              </svg>
+              Compare 2 Candidates
             </button>
           )}
 
           <button
-            className={`sarvam-btn-outline ${isRubricTunerOpen ? 'active' : ''}`}
+            className="ms-btn-action ms-btn-yellow"
             onClick={() => setIsRubricTunerOpen(!isRubricTunerOpen)}
-            style={{ padding: '8px 14px' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="21" x2="4" y2="14" />
-              <line x1="4" y1="10" x2="4" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12" y2="3" />
-              <line x1="20" y1="21" x2="20" y2="16" />
-              <line x1="20" y1="12" x2="20" y2="3" />
-              <line x1="1" y1="14" x2="7" y2="14" />
-              <line x1="9" y1="8" x2="15" y2="8" />
-              <line x1="17" y1="16" x2="23" y2="16" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="4" y1="21" x2="4" y2="14"/>
+              <line x1="4" y1="10" x2="4" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12" y2="3"/>
+              <line x1="20" y1="21" x2="20" y2="16"/>
+              <line x1="20" y1="12" x2="20" y2="3"/>
             </svg>
-            <span>{isRubricTunerOpen ? 'Hide Rubric Tuner' : 'Tune Rubric Weights'}</span>
+            {isRubricTunerOpen ? 'Hide Rubric Tuner' : 'Tune Rubric Weights'}
           </button>
         </div>
       </div>
 
       {/* ── Decoupled Policy Banner ── */}
-      <div
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-strong)',
-          borderRadius: 'var(--radius)',
-          padding: '12px 18px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.2rem' }}>⚖️</span>
+      <div className="ms-policy-banner">
+        <div className="ms-policy-left">
+          <div className="ms-policy-icon-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18"/>
+            </svg>
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-              Decoupled Assessment Policy Enforced
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-              Quality scores evaluate intellectual merit, reasoning rigor, and novelty. AI involvement is tracked as an advisory signal for reviewer oversight, not an automatic disqualifier.
+            <div className="ms-policy-title">Decoupled Assessment Policy Enforced</div>
+            <div className="ms-policy-desc">
+              Scores measure intellectual novelty, reasoning rigor, and prompt fidelity. High AI detection flags trigger secondary human review rather than automatic disqualification.
             </div>
           </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span className="merkle-valid-pill" style={{ fontSize: '0.68rem' }}>
-            <span className="pulse-dot green" />
-            Human Review Required for &gt;70% AI Signal
-          </span>
-        </div>
+        <span className="ms-policy-badge">
+          Human Oversight Active (&gt;70% Threshold)
+        </span>
       </div>
 
-      {/* ── CSV Dataset Ingestion & Mode Selector ── */}
-      <div
-        className="card"
-        style={{
-          padding: '16px 20px',
-          marginBottom: '20px',
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(168,85,247,0.2) 100%)',
-                border: '1px solid rgba(99,102,241,0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.1rem',
-              }}
-            >
-              📊
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                CSV Dataset Ingestion &amp; Evaluation Mode
-              </h3>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Upload custom CSV files or switch between Hackathon &amp; Resume evaluation workflows
-              </span>
-            </div>
-          </div>
+      {/* ── CSV Ingestion Card ── */}
+      <div className="ms-ingestion-card">
+        <div className="ms-ingestion-header">
+          <h2 className="ms-ingestion-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+            Dataset Ingestion &amp; Evaluation Mode
+          </h2>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Shortlister Mode:
-            </span>
+          <div className="ms-mode-pill-select">
+            <span>Workflow:</span>
             <select
+              className="ms-select-input"
               value={evaluationMode}
               onChange={(e) => handleModeChange(e.target.value)}
-              style={{
-                padding: '5px 12px',
-                fontSize: '0.78rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--indigo)',
-                background: 'var(--bg-elevated)',
-                color: 'var(--text-primary)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
             >
-              <option value="hackathon">🚀 Hackathon Submissions Shortlister</option>
-              <option value="resume">💼 Resume &amp; Candidate Shortlister</option>
+              <option value="hackathon">Hackathon Project Shortlister</option>
+              <option value="resume">Resume &amp; Candidate Shortlister</option>
             </select>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.1fr) minmax(320px, 1.9fr)', gap: '16px', alignItems: 'stretch' }}>
-          {/* CSV File Dropzone / Upload Area */}
+        <div className="ms-ingestion-grid">
+          {/* Dropzone */}
           <div
-            style={{
-              border: '1.5px dashed var(--border-strong)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '16px',
-              textAlign: 'center',
-              background: 'var(--bg-card)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'var(--transition)',
-            }}
+            className="ms-dropzone"
             onClick={() => document.getElementById('csv-file-input').click()}
-            title="Upload CSV with candidate submissions or resumes"
           >
             <input
               type="file"
@@ -748,154 +1579,99 @@ export default function Shortlisting({ showToast }) {
               onChange={handleCsvFileUpload}
               style={{ display: 'none' }}
             />
-            <div style={{ fontSize: '1.6rem' }}>📁</div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {csvFileName ? `File: ${csvFileName}` : 'Upload Candidates CSV'}
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0066FF" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17,8 12,3 7,8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div className="ms-dropzone-title">
+              {csvFileName ? `File Loaded: ${csvFileName}` : 'Upload Candidate CSV'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            <p className="ms-dropzone-desc">
               {csvFileName
-                ? `✓ ${csvCandidateCount} candidates imported & ready for AI evaluation`
-                : 'Click to browse or drop CSV (supports id, name, summary, text_content)'}
-            </div>
-            <button
-              type="button"
-              className="sarvam-btn-outline"
-              style={{ fontSize: '0.72rem', padding: '4px 12px', marginTop: '4px' }}
-              onClick={(e) => {
-                e.stopPropagation()
-                document.getElementById('csv-file-input').click()
-              }}
-            >
-              Browse CSV File
-            </button>
+                ? `${csvCandidateCount} candidates loaded into memory`
+                : 'Click to browse or drop CSV file (headers: name, author, summary, text_content)'}
+            </p>
           </div>
 
-          {/* Quick Mock Data Loaders & Links */}
-          <div
-            style={{
-              padding: '14px 16px',
-              background: 'var(--bg-card)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '10px',
-            }}
-          >
+          {/* Mock Presets */}
+          <div className="ms-mock-panel">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Pre-configured Mock Datasets (in <code>mock_data/</code> folder):
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+                  Mock Datasets (in mock_data/):
                 </span>
-                <span className="sarvam-eyebrow-pill" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
-                  2 Mock Datasets Ready
+                <span className="ms-stamp ms-stamp-green" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
+                  2 Mock Files Ready
                 </span>
-              </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                Load pre-populated benchmark CSVs into the studio with one click:
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="ms-mock-buttons-row">
                 <button
                   type="button"
-                  className={`btn-secondary ${evaluationMode === 'hackathon' && csvFileName?.includes('hackathon') ? 'active' : ''}`}
+                  className={`ms-mock-btn ${evaluationMode === 'hackathon' && csvFileName?.includes('hackathon') ? 'active' : ''}`}
                   onClick={() => handleLoadSampleCsv('hackathon')}
                   disabled={isLoadingSample}
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '0.74rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    border: evaluationMode === 'hackathon' ? '1px solid var(--indigo)' : '1px solid var(--border)',
-                    background: evaluationMode === 'hackathon' ? 'var(--indigo-dim)' : 'transparent',
-                    cursor: 'pointer',
-                  }}
                 >
-                  <span>🚀 Load Hackathon Mock CSV</span>
-                  <span style={{ fontSize: '0.64rem', color: 'var(--indigo)', fontWeight: 700 }}>(6 Projects)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  Load Hackathon Mock CSV (6 Projects)
                 </button>
 
                 <button
                   type="button"
-                  className={`btn-secondary ${evaluationMode === 'resume' && csvFileName?.includes('resume') ? 'active' : ''}`}
+                  className={`ms-mock-btn ${evaluationMode === 'resume' && csvFileName?.includes('resume') ? 'active' : ''}`}
                   onClick={() => handleLoadSampleCsv('resume')}
                   disabled={isLoadingSample}
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '0.74rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    border: evaluationMode === 'resume' ? '1px solid var(--cyan)' : '1px solid var(--border)',
-                    background: evaluationMode === 'resume' ? 'var(--cyan-dim)' : 'transparent',
-                    cursor: 'pointer',
-                  }}
                 >
-                  <span>💼 Load Resume Mock CSV</span>
-                  <span style={{ fontSize: '0.64rem', color: 'var(--cyan)', fontWeight: 700 }}>(6 Candidates)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="2" y="7" width="20" height="14" rx="0" ry="0"/>
+                    <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+                  </svg>
+                  Load Resume Mock CSV (6 Candidates)
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                Files located in: <code>mock_data/</code>
-              </span>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <a
-                  href="/mock_data/hackathon_submissions.csv"
-                  download="hackathon_submissions.csv"
-                  style={{ fontSize: '0.7rem', color: 'var(--indigo)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-                  title="Download hackathon_submissions.csv"
-                >
-                  ↓ Download Hackathon CSV
+            <div className="ms-download-row">
+              <span>Files located in <code>mock_data/</code></span>
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <a href="/mock_data/hackathon_submissions.csv" download="hackathon_submissions.csv" className="ms-dl-link">
+                  ↓ Hackathon CSV
                 </a>
-                <span style={{ color: 'var(--border)' }}>·</span>
-                <a
-                  href="/mock_data/resume_candidates.csv"
-                  download="resume_candidates.csv"
-                  style={{ fontSize: '0.7rem', color: 'var(--cyan)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
-                  title="Download resume_candidates.csv"
-                >
-                  ↓ Download Resume CSV
+                <span>·</span>
+                <a href="/mock_data/resume_candidates.csv" download="resume_candidates.csv" className="ms-dl-link">
+                  ↓ Resume CSV
                 </a>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Rubric Weight Tuner (Collapsible) ── */}
       {isRubricTunerOpen && (
-        <div
-          className="card"
-          style={{
-            padding: '18px 24px',
-            marginBottom: '20px',
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--indigo)',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div className="ms-tuner-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <h3 style={{ margin: '0 0 2px', fontSize: '1.05rem', fontWeight: 900, textTransform: 'uppercase' }}>
                 Live Weighted Rubric Calibrator
               </h3>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Adjusting weights immediately updates and re-ranks all {submissions.length} candidates in real-time
+              <span style={{ fontSize: '0.74rem', fontWeight: 700 }}>
+                Adjusting weights immediately recalibrates all {submissions.length} candidate scores in real-time.
               </span>
             </div>
-            <div style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--indigo)' }}>
+            <span className="ms-stamp ms-stamp-pink">
               Total Weight: {weights.relevance + weights.reasoning + weights.originality}%
-            </div>
+            </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '6px' }}>
-                <span style={{ fontWeight: 600 }}>1. Relevance &amp; Alignment</span>
-                <span style={{ fontWeight: 700, color: 'var(--indigo)' }}>{weights.relevance}%</span>
+          <div className="ms-tuner-sliders">
+            <div className="ms-slider-box">
+              <div className="ms-slider-head">
+                <span>1. Relevance &amp; Alignment</span>
+                <span style={{ color: '#0066FF' }}>{weights.relevance}%</span>
               </div>
               <input
                 type="range"
@@ -903,15 +1679,17 @@ export default function Shortlisting({ showToast }) {
                 max="60"
                 value={weights.relevance}
                 onChange={(e) => handleWeightChange('relevance', e.target.value)}
-                style={{ width: '100%', accentColor: 'var(--indigo)', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: '#0066FF', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Prompt fidelity &amp; scope execution</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#666' }}>
+                Prompt fidelity &amp; execution scope
+              </span>
             </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '6px' }}>
-                <span style={{ fontWeight: 600 }}>2. Reasoning Rigor</span>
-                <span style={{ fontWeight: 700, color: 'var(--indigo)' }}>{weights.reasoning}%</span>
+            <div className="ms-slider-box">
+              <div className="ms-slider-head">
+                <span>2. Reasoning Rigor</span>
+                <span style={{ color: '#FF1493' }}>{weights.reasoning}%</span>
               </div>
               <input
                 type="range"
@@ -919,15 +1697,17 @@ export default function Shortlisting({ showToast }) {
                 max="60"
                 value={weights.reasoning}
                 onChange={(e) => handleWeightChange('reasoning', e.target.value)}
-                style={{ width: '100%', accentColor: 'var(--indigo)', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: '#FF1493', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Analytical depth &amp; technical validation</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#666' }}>
+                Analytical depth &amp; technical validation
+              </span>
             </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '6px' }}>
-                <span style={{ fontWeight: 600 }}>3. Originality &amp; Novelty</span>
-                <span style={{ fontWeight: 700, color: 'var(--indigo)' }}>{weights.originality}%</span>
+            <div className="ms-slider-box">
+              <div className="ms-slider-head">
+                <span>3. Originality &amp; Novelty</span>
+                <span style={{ color: '#00E5A0' }}>{weights.originality}%</span>
               </div>
               <input
                 type="range"
@@ -935,116 +1715,55 @@ export default function Shortlisting({ showToast }) {
                 max="60"
                 value={weights.originality}
                 onChange={(e) => handleWeightChange('originality', e.target.value)}
-                style={{ width: '100%', accentColor: 'var(--indigo)', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: '#00E5A0', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Uniqueness &amp; anti-boilerplate cadence</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#666' }}>
+                Uniqueness &amp; anti-boilerplate cadence
+              </span>
             </div>
           </div>
         </div>
       )}
 
       {/* ── Cohort Tabs Bar ── */}
-      <div className="rubric-tabs-bar" style={{ display: 'flex', gap: '8px', marginBottom: '18px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div className="ms-cohort-tabs">
         {projects.map((p) => (
           <button
             key={p.id}
-            className={`rubric-tab-btn ${activeProjectId === p.id ? 'active' : ''}`}
+            className={`ms-cohort-tab-btn ${activeProjectId === p.id ? 'active' : ''}`}
             onClick={() => setActiveProjectId(p.id)}
-            style={{
-              padding: '10px 16px',
-              borderRadius: 'var(--radius)',
-              border: activeProjectId === p.id ? '1px solid var(--indigo)' : '1px solid var(--border)',
-              background: activeProjectId === p.id ? 'var(--indigo-dim)' : 'var(--bg-card)',
-              color: activeProjectId === p.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontWeight: activeProjectId === p.id ? 700 : 500,
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'var(--transition)',
-            }}
           >
             <span>{p.name}</span>
-            <span
-              style={{
-                fontSize: '0.68rem',
-                background: 'var(--bg-surface)',
-                padding: '2px 7px',
-                borderRadius: '9999px',
-                border: '1px solid var(--border)',
-                fontWeight: 600,
-              }}
-            >
-              {p.count}
-            </span>
+            <span className="ms-cohort-tab-count">{p.count}</span>
           </button>
         ))}
       </div>
 
-      {/* ── Sticky Batch Actions Bar (when items selected) ── */}
+      {/* ── Sticky Batch Actions Bar ── */}
       {selectedSubIds.length > 0 && (
-        <div
-          style={{
-            background: 'var(--text-primary)',
-            color: 'var(--bg-base)',
-            borderRadius: 'var(--radius)',
-            padding: '10px 18px',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', fontWeight: 600 }}>
+        <div className="ms-batch-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900, textTransform: 'uppercase' }}>
             <span>✓ {selectedSubIds.length} candidate(s) selected</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
-              style={{
-                background: 'var(--emerald)',
-                color: 'white',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="ms-btn-action"
+              style={{ padding: '6px 14px', fontSize: '0.74rem', background: '#00E5A0', color: '#121316' }}
               onClick={() => handleBatchStatus('shortlisted')}
             >
               Batch Shortlist
             </button>
             <button
-              style={{
-                background: 'var(--amber)',
-                color: 'var(--bg-base)',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.74rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="ms-btn-action"
+              style={{ padding: '6px 14px', fontSize: '0.74rem', background: '#FFD700', color: '#121316' }}
               onClick={() => handleBatchStatus('flagged')}
             >
               Batch Escalate to Oral Defense
             </button>
             <button
-              style={{
-                background: 'transparent',
-                color: 'var(--bg-base)',
-                border: '1px solid currentColor',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-              }}
+              className="ms-btn-action"
+              style={{ padding: '6px 14px', fontSize: '0.74rem', background: '#FFFFFF', color: '#121316' }}
               onClick={() => setSelectedSubIds([])}
             >
               Deselect All
@@ -1054,46 +1773,33 @@ export default function Shortlisting({ showToast }) {
       )}
 
       {/* ── Filter & Search Toolbar ── */}
-      <div
-        className="card"
-        style={{
-          padding: '12px 18px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '14px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+      <div className="ms-toolbar">
+        <div className="ms-filter-pills">
           {['all', 'shortlisted', 'pending', 'flagged'].map((st) => (
             <button
               key={st}
-              className={`sample-pill ${statusFilter === st ? 'active' : ''}`}
+              className={`ms-filter-pill ${statusFilter === st ? 'active' : ''}`}
               onClick={() => setStatusFilter(st)}
-              style={{ textTransform: 'capitalize' }}
             >
               {st}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, maxWidth: '420px' }}>
+        <div className="ms-search-box">
           <input
             type="text"
-            className="filter-input"
-            placeholder="Search candidate name, author, or summary..."
+            className="form-input"
+            placeholder="Search candidate name, author, or keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', fontSize: '0.8rem' }}
           />
 
           <select
-            className="filter-input"
+            className="form-select"
             value={sortBy}
             onChange={(e) => handleSort(e.target.value)}
-            style={{ fontSize: '0.78rem', minWidth: '140px' }}
+            style={{ minWidth: '150px' }}
           >
             <option value="score-desc">Score: High → Low</option>
             <option value="score-asc">Score: Low → High</option>
@@ -1104,27 +1810,29 @@ export default function Shortlisting({ showToast }) {
         </div>
       </div>
 
-      {/* ── Main Layout: Table (Left) + Evaluation Drawer (Right) ── */}
-      <div className="shortlist-layout" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '22px' }}>
-        {/* Table Card */}
-        <div className="card">
-          <div className="card-header">
+      {/* ── 2-Column Grid: Table (Left) + Drawer (Right) ── */}
+      <div className="ms-layout-grid">
+        {/* Table Box */}
+        <div className="ms-table-box">
+          <div className="ms-table-head">
             <div>
-              <h3 className="card-title">Candidate Rankings</h3>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {filteredSubmissions.length} evaluated submissions under {currentProject.rubric}
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, textTransform: 'uppercase' }}>
+                Candidate Rankings ({filteredSubmissions.length})
+              </h3>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>
+                Evaluated under {currentProject.rubric}
               </span>
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            <span className="ms-stamp ms-stamp-pink" style={{ fontSize: '0.65rem' }}>
               Select 2 to Compare
             </span>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table className="shortlist-table" style={{ width: '100%', fontSize: '0.8rem' }}>
+            <table className="ms-table">
               <thead>
                 <tr>
-                  <th style={{ width: '30px' }}>
+                  <th style={{ width: '32px', textAlign: 'center' }}>
                     <input
                       type="checkbox"
                       checked={selectedSubIds.length === filteredSubmissions.length && filteredSubmissions.length > 0}
@@ -1144,7 +1852,7 @@ export default function Shortlisting({ showToast }) {
               <tbody>
                 {filteredSubmissions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
                       No submissions match your filter criteria.
                     </td>
                   </tr>
@@ -1157,13 +1865,10 @@ export default function Shortlisting({ showToast }) {
                     return (
                       <tr
                         key={s.id}
+                        className={isSelected ? 'selected' : ''}
                         onClick={() => setSelectedSub(s)}
-                        style={{
-                          cursor: 'pointer',
-                          background: isSelected ? 'var(--indigo-dim)' : 'transparent',
-                        }}
                       >
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
                           <input
                             type="checkbox"
                             checked={isChecked}
@@ -1171,54 +1876,40 @@ export default function Shortlisting({ showToast }) {
                           />
                         </td>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span
-                              style={{
-                                fontWeight: 700,
-                                fontSize: '0.74rem',
-                                color: 'var(--indigo)',
-                                background: 'var(--bg-elevated)',
-                                padding: '2px 6px',
-                                borderRadius: 'var(--radius-sm)',
-                              }}
-                            >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="ms-stamp ms-stamp-yellow" style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                               {s.rank}
                             </span>
                             <div>
-                              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{s.author} · {s.id}</div>
+                              <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{s.name}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                {s.author} · {s.id}
+                              </div>
                             </div>
                           </div>
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>
-                              {s.total}%
-                            </span>
-                            <div className="mini-bar" style={{ width: '60px' }}>
-                              <div style={{ width: `${s.total}%` }} />
+                            <span style={{ fontWeight: 900, fontSize: '0.94rem' }}>{s.total}%</span>
+                            <div className="score-bar-outer" style={{ width: '60px' }}>
+                              <div className="score-bar-inner" style={{ width: `${s.total}%` }} />
                             </div>
                           </div>
                         </td>
                         <td>
-                          <span className={`ai-badge ${s.aiScore > 70 ? 'high' : s.aiScore > 35 ? 'medium' : 'low'}`}>
+                          <span className={`status-pill ${s.aiScore > 70 ? 'high' : s.aiScore > 35 ? 'medium' : 'low'}`}>
                             {s.aiSignal} ({s.aiScore}%)
                           </span>
                         </td>
                         <td>
-                          <span className={`status-badge ${s.status}`}>
+                          <span className={`status-pill ${s.status === 'shortlisted' ? 'low' : s.status === 'flagged' ? 'high' : 'medium'}`}>
                             {s.status}
                           </span>
                         </td>
                         <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                           <button
-                            className={`btn-secondary small ${isCompared ? 'active' : ''}`}
-                            style={{
-                              fontSize: '0.68rem',
-                              padding: '2px 8px',
-                              border: isCompared ? '1px solid var(--indigo)' : '1px solid var(--border)',
-                              background: isCompared ? 'var(--indigo-dim)' : 'transparent',
-                            }}
+                            className={`ms-btn-action ${isCompared ? 'ms-btn-pink' : 'ms-btn-yellow'}`}
+                            style={{ fontSize: '0.68rem', padding: '3px 8px' }}
                             onClick={() => handleToggleCompare(s.id)}
                             title="Compare this candidate side-by-side"
                           >
@@ -1235,237 +1926,160 @@ export default function Shortlisting({ showToast }) {
         </div>
 
         {/* Evaluation Drawer (Right Panel) */}
-        <div className="card" style={{ height: 'fit-content', position: 'sticky', top: '90px' }}>
+        <div className="ms-drawer">
           {selectedSub ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <div className="card-header" style={{ padding: 0, borderBottom: 'none' }}>
+            <>
+              <div className="ms-drawer-header">
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="rubric-badge">{selectedSub.rank} Ranked</span>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span className="ms-stamp ms-stamp-pink">{selectedSub.rank} Ranked</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)' }}>
                       {selectedSub.id}
                     </span>
                   </div>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-primary)' }}>
                     {selectedSub.name}
                   </h3>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
                     Lead: {selectedSub.author}
                   </span>
                 </div>
 
-                <span className={`status-badge ${selectedSub.status}`}>
+                <span className={`status-pill ${selectedSub.status === 'shortlisted' ? 'low' : selectedSub.status === 'flagged' ? 'high' : 'medium'}`}>
                   {selectedSub.status}
                 </span>
               </div>
 
-              {/* Score Highlights */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div className="stat-card" style={{ padding: '12px' }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Weighted Merit Score</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-                    {selectedSub.total}%
-                  </div>
+              {/* Score Tile Pair */}
+              <div className="ms-score-card-pair">
+                <div className="ms-score-tile">
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    Weighted Merit Score
+                  </span>
+                  <div className="ms-tile-val">{selectedSub.total}%</div>
                 </div>
 
-                <div className="stat-card" style={{ padding: '12px' }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>AI Detection Signal</span>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 700, marginTop: '4px' }}>
-                    <span className={`ai-badge ${selectedSub.aiScore > 70 ? 'high' : selectedSub.aiScore > 35 ? 'medium' : 'low'}`}>
+                <div className="ms-score-tile">
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    AI Detection Signal
+                  </span>
+                  <div className="ms-tile-val" style={{ fontSize: '1.1rem', marginTop: '2px' }}>
+                    <span className={`status-pill ${selectedSub.aiScore > 70 ? 'high' : selectedSub.aiScore > 35 ? 'medium' : 'low'}`}>
                       {selectedSub.aiSignal} ({selectedSub.aiScore}%)
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Rubric Criteria Breakdown */}
-              <div style={{ padding: '14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
-                  Rubric Criteria Weights &amp; Scores
-                </span>
+              {/* Rubric Breakdown */}
+              <div className="ms-rubric-breakdown-box">
+                <span className="section-label">Rubric Criteria Weights &amp; Scores</span>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px' }}>
                       <span>Relevance ({weights.relevance}%)</span>
-                      <span style={{ fontWeight: 700 }}>{selectedSub.relevance}/10</span>
+                      <span>{selectedSub.relevance}/10</span>
                     </div>
-                    <div className="mini-bar"><div style={{ width: `${selectedSub.relevance * 10}%` }} /></div>
+                    <div className="score-bar-outer"><div className="score-bar-inner" style={{ width: `${selectedSub.relevance * 10}%`, background: '#0066FF' }} /></div>
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px' }}>
                       <span>Reasoning Rigor ({weights.reasoning}%)</span>
-                      <span style={{ fontWeight: 700 }}>{selectedSub.reasoning}/10</span>
+                      <span>{selectedSub.reasoning}/10</span>
                     </div>
-                    <div className="mini-bar"><div style={{ width: `${selectedSub.reasoning * 10}%` }} /></div>
+                    <div className="score-bar-outer"><div className="score-bar-inner" style={{ width: `${selectedSub.reasoning * 10}%`, background: '#FF1493' }} /></div>
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '3px' }}>
-                      <span>Originality &amp; Novelty ({weights.originality}%)</span>
-                      <span style={{ fontWeight: 700 }}>{selectedSub.originality}/10</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px' }}>
+                      <span>Originality ({weights.originality}%)</span>
+                      <span>{selectedSub.originality}/10</span>
                     </div>
-                    <div className="mini-bar"><div style={{ width: `${selectedSub.originality * 10}%` }} /></div>
+                    <div className="score-bar-outer"><div className="score-bar-inner" style={{ width: `${selectedSub.originality * 10}%`, background: '#00E5A0' }} /></div>
                   </div>
                 </div>
               </div>
 
-              {/* Qualitative Summary */}
+              {/* Summary */}
               <div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Executive Evaluation Summary
-                </span>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginTop: '4px' }}>
+                <span className="section-label">Executive Evaluation Rationale</span>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 600, margin: '6px 0 0' }}>
                   {selectedSub.summary}
                 </p>
               </div>
 
-              {/* AI Model Assessment & Criteria Breakdown (Gemma 4 31B via OpenRouter) */}
-              <div style={{ padding: '14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.85rem' }}>✨</span>
-                    <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-primary)' }}>
-                      AI Model Assessment
-                    </span>
-                  </div>
+              {/* Gemma 4 31B AI Assessment Box */}
+              <div className="ms-llm-eval-box">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 900, textTransform: 'uppercase', color: '#0066FF' }}>
+                    Gemma 4 31B Forensics
+                  </span>
                   <button
-                    className="sarvam-btn-outline"
+                    className="ms-btn-action ms-btn-pink"
+                    style={{ padding: '4px 10px', fontSize: '0.68rem' }}
                     onClick={() => handleEvaluateSingle(selectedSub.id)}
                     disabled={isEvaluating}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.68rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      borderColor: 'var(--indigo)',
-                      color: 'var(--indigo)',
-                      cursor: isEvaluating ? 'not-allowed' : 'pointer',
-                    }}
-                    title="Run LLM evaluation specifically for this submission"
                   >
-                    {isEvaluating && evaluatingCandidateId === selectedSub.id ? (
-                      <span>Evaluating...</span>
-                    ) : (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        <span>{selectedSub.criterionScores?.length ? 'Re-evaluate (Gemma)' : 'Evaluate (Gemma 4 31B)'}</span>
-                      </>
-                    )}
+                    {isEvaluating && evaluatingCandidateId === selectedSub.id ? 'Evaluating…' : 'Evaluate Single'}
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                  <span className="sarvam-eyebrow-pill" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
-                    Model: {selectedSub.evaluatorMetadata?.model || 'google/gemma-4-31b-it:free'}
-                  </span>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                    Decoupled Evaluation Active
-                  </span>
-                </div>
-
                 {selectedSub.criterionScores && selectedSub.criterionScores.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {selectedSub.criterionScores.map((c, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          borderTop: idx > 0 ? '1px solid var(--border)' : 'none',
-                          paddingTop: idx > 0 ? '10px' : '0',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', fontWeight: 600, marginBottom: '3px' }}>
-                          <span style={{ color: 'var(--text-primary)' }}>{c.criterion_title || c.criterion_key}</span>
-                          <span style={{ color: 'var(--indigo)', fontWeight: 700 }}>
-                            {c.score} / {c.max_score || 10} ({c.weighted_score || 0} pts)
-                          </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedSub.criterionScores.map((c, i) => (
+                      <div key={i} style={{ borderTop: i > 0 ? '1.5px solid #0066FF' : 'none', paddingTop: i > 0 ? '6px' : '0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 900 }}>
+                          <span>{c.criterion_title || c.criterion_key}</span>
+                          <span>{c.score}/{c.max_score || 10}</span>
                         </div>
-                        <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '3px 0' }}>
-                          {c.explanation}
-                        </p>
-                        {c.evidence_excerpts && c.evidence_excerpts.length > 0 && (
-                          <div style={{ marginTop: '5px', padding: '6px 8px', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '4px', borderLeft: '3px solid var(--indigo)' }}>
-                            <span style={{ fontSize: '0.64rem', fontWeight: 600, color: 'var(--indigo)', display: 'block' }}>Verified Evidence Excerpt:</span>
-                            <span style={{ fontSize: '0.68rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
-                              "{c.evidence_excerpts[0]}"
-                            </span>
-                          </div>
-                        )}
-                        {c.missing_requirements && c.missing_requirements.length > 0 && (
-                          <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            {c.missing_requirements.map((m, mIdx) => (
-                              <span key={mIdx} style={{ fontSize: '0.63rem', padding: '1px 5px', borderRadius: '3px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--rose)' }}>
-                                Missing: {m}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        <p style={{ margin: '2px 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{c.explanation}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ padding: '8px 10px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}>
-                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
-                      This submission currently displays baseline heuristics. Click <strong>Evaluate (Gemma 4 31B)</strong> to query OpenRouter and generate verified criterion explanations and evidence citations.
-                    </p>
-                  </div>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    Click &quot;Evaluate Single&quot; to query Gemma 4 31B via OpenRouter for detailed criterion explanations.
+                  </p>
                 )}
               </div>
 
-              {/* Reviewer Override / Action Box */}
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
-                  Record Official Reviewer Decision:
-                </span>
+              {/* Reviewer Action Bar */}
+              <div className="ms-decision-box">
+                <span className="section-label">Record Reviewer Decision</span>
 
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                  <button
-                    className="sarvam-btn-primary"
-                    style={{ flex: 1, padding: '8px 10px', fontSize: '0.74rem', justifyContent: 'center' }}
-                    onClick={() => updateStatus(selectedSub.id, 'shortlisted')}
-                  >
+                <div className="ms-decision-btn-row">
+                  <button className="ms-decide-btn ms-decide-shortlist" onClick={() => updateStatus(selectedSub.id, 'shortlisted')}>
                     ✓ Shortlist
                   </button>
-                  <button
-                    className="sarvam-btn-outline"
-                    style={{ flex: 1, padding: '8px 10px', fontSize: '0.74rem', justifyContent: 'center' }}
-                    onClick={() => updateStatus(selectedSub.id, 'flagged')}
-                  >
-                    ⚠ Flag for Review
+                  <button className="ms-decide-btn ms-decide-flag" onClick={() => updateStatus(selectedSub.id, 'flagged')}>
+                    ⚠ Flag Oral
                   </button>
-                  <button
-                    className="btn-secondary"
-                    style={{ flex: 1, padding: '8px 10px', fontSize: '0.74rem', justifyContent: 'center', color: 'var(--rose)' }}
-                    onClick={() => updateStatus(selectedSub.id, 'rejected')}
-                  >
+                  <button className="ms-decide-btn ms-decide-reject" onClick={() => updateStatus(selectedSub.id, 'rejected')}>
                     ✕ Reject
                   </button>
                 </div>
 
                 <input
                   type="text"
-                  className="filter-input"
-                  placeholder="Optional rationale signed to SHA-256 ledger..."
+                  className="form-input"
+                  placeholder="Rationale signed to SHA-256 ledger..."
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
-                  style={{ width: '100%', fontSize: '0.76rem', marginBottom: '6px' }}
+                  style={{ fontSize: '0.78rem' }}
                 />
 
-                {/* Quick rationale templates */}
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {[
                     'Exceptional technical novelty verified.',
-                    'AI tool usage verified as auxiliary research.',
+                    'AI used strictly as secondary research tool.',
                     'Flagged for 10-minute technical oral defense.',
                   ].map((tmpl, idx) => (
                     <button
                       key={idx}
-                      className="sample-pill"
-                      style={{ fontSize: '0.64rem', padding: '2px 6px' }}
+                      className="ms-stamp ms-stamp-yellow"
+                      style={{ fontSize: '0.62rem', padding: '2px 8px', cursor: 'pointer' }}
                       onClick={() => setOverrideReason(tmpl)}
                     >
                       + {tmpl}
@@ -1473,183 +2087,77 @@ export default function Shortlisting({ showToast }) {
                   ))}
                 </div>
               </div>
-            </div>
+            </>
           ) : (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 700 }}>
               Select a candidate from the table to view detailed rubric metrics.
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Side-by-Side Comparison Modal ── */}
+      {/* ── Compare Modal ── */}
       {isCompareModalOpen && sub1 && sub2 && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.45)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-          onClick={() => setIsCompareModalOpen(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '820px',
-              background: 'var(--bg-card)',
-              borderRadius: 'var(--radius-xl)',
-              border: '1px solid var(--border-strong)',
-              boxShadow: 'var(--shadow-xl)',
-              padding: '28px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Side-by-Side Candidate Rubric Comparison
-                </h3>
-                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                  Direct empirical comparison evaluated under {currentProject.rubric}
-                </span>
-              </div>
+        <div className="modal-overlay" onClick={() => setIsCompareModalOpen(false)}>
+          <div className="modal-box" style={{ maxWidth: '840px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Side-by-Side Candidate Rubric Comparison</h3>
               <button
-                className="btn-secondary small"
+                className="icon-btn"
                 onClick={() => setIsCompareModalOpen(false)}
-                style={{ borderRadius: '50%', width: '28px', height: '28px', padding: 0 }}
+                style={{ width: '28px', height: '28px' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              {/* Candidate 1 */}
-              <div style={{ padding: '18px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                <span className="rubric-badge" style={{ marginBottom: '6px', display: 'inline-block' }}>
-                  {sub1.rank} Ranked
-                </span>
-                <h4 style={{ margin: '0 0 2px', fontSize: '1.05rem', color: 'var(--text-primary)' }}>{sub1.name}</h4>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{sub1.author}</span>
-
-                <div style={{ margin: '14px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--indigo)' }}>
-                  {sub1.total}% <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Merit Score</span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Relevance:</span>
-                      <span style={{ fontWeight: 600 }}>{sub1.relevance}/10</span>
+            <div className="modal-body">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Candidate 1 */}
+                <div className="ms-compare-card">
+                  <span className="ms-stamp ms-stamp-pink" style={{ marginBottom: '6px' }}>{sub1.rank} Ranked</span>
+                  <h4 style={{ margin: '4px 0', fontSize: '1.1rem', fontWeight: 900 }}>{sub1.name}</h4>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>{sub1.author}</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0066FF', margin: '10px 0' }}>{sub1.total}%</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                    <div>Relevance: <strong>{sub1.relevance}/10</strong></div>
+                    <div>Reasoning: <strong>{sub1.reasoning}/10</strong></div>
+                    <div>Originality: <strong>{sub1.originality}/10</strong></div>
+                    <div style={{ marginTop: '8px' }}>
+                      <span className={`status-pill ${sub1.aiScore > 70 ? 'high' : 'low'}`}>
+                        AI: {sub1.aiSignal} ({sub1.aiScore}%)
+                      </span>
                     </div>
-                    <div className="mini-bar"><div style={{ width: `${sub1.relevance * 10}%` }} /></div>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Reasoning:</span>
-                      <span style={{ fontWeight: 600 }}>{sub1.reasoning}/10</span>
-                    </div>
-                    <div className="mini-bar"><div style={{ width: `${sub1.reasoning * 10}%` }} /></div>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Originality:</span>
-                      <span style={{ fontWeight: 600 }}>{sub1.originality}/10</span>
-                    </div>
-                    <div className="mini-bar"><div style={{ width: `${sub1.originality * 10}%` }} /></div>
                   </div>
                 </div>
 
-                <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>AI Involvement:</span>
-                  <div style={{ marginTop: '4px' }}>
-                    <span className={`ai-badge ${sub1.aiScore > 70 ? 'high' : 'low'}`}>
-                      {sub1.aiSignal} ({sub1.aiScore}%)
-                    </span>
+                {/* Candidate 2 */}
+                <div className="ms-compare-card">
+                  <span className="ms-stamp ms-stamp-yellow" style={{ marginBottom: '6px' }}>{sub2.rank} Ranked</span>
+                  <h4 style={{ margin: '4px 0', fontSize: '1.1rem', fontWeight: 900 }}>{sub2.name}</h4>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>{sub2.author}</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FF1493', margin: '10px 0' }}>{sub2.total}%</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                    <div>Relevance: <strong>{sub2.relevance}/10</strong></div>
+                    <div>Reasoning: <strong>{sub2.reasoning}/10</strong></div>
+                    <div>Originality: <strong>{sub2.originality}/10</strong></div>
+                    <div style={{ marginTop: '8px' }}>
+                      <span className={`status-pill ${sub2.aiScore > 70 ? 'high' : 'low'}`}>
+                        AI: {sub2.aiSignal} ({sub2.aiScore}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Candidate 2 */}
-              <div style={{ padding: '18px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                <span className="rubric-badge" style={{ marginBottom: '6px', display: 'inline-block' }}>
-                  {sub2.rank} Ranked
-                </span>
-                <h4 style={{ margin: '0 0 2px', fontSize: '1.05rem', color: 'var(--text-primary)' }}>{sub2.name}</h4>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{sub2.author}</span>
-
-                <div style={{ margin: '14px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--indigo)' }}>
-                  {sub2.total}% <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Merit Score</span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Relevance:</span>
-                      <span style={{ fontWeight: 600 }}>{sub2.relevance}/10</span>
-                    </div>
-                    <div className="mini-bar"><div style={{ width: `${sub2.relevance * 10}%` }} /></div>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Reasoning:</span>
-                      <span style={{ fontWeight: 600 }}>{sub2.reasoning}/10</span>
-                    </div>
-                    <div className="mini-bar"><div style={{ width: `${sub2.reasoning * 10}%` }} /></div>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Originality:</span>
-                      <span style={{ fontWeight: 600 }}>{sub2.originality}/10</span>
-                    </div>
-                    <div className="mini-bar"><div style={{ width: `${sub2.originality * 10}%` }} /></div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>AI Involvement:</span>
-                  <div style={{ marginTop: '4px' }}>
-                    <span className={`ai-badge ${sub2.aiScore > 70 ? 'high' : 'low'}`}>
-                      {sub2.aiSignal} ({sub2.aiScore}%)
-                    </span>
-                  </div>
-                </div>
+              {/* Delta Box */}
+              <div className="ms-compare-delta">
+                Score Advantage: {Math.abs(sub1.total - sub2.total).toFixed(1)}% to {sub1.total >= sub2.total ? sub1.name : sub2.name}
               </div>
             </div>
 
-            {/* Delta Analysis */}
-            <div
-              style={{
-                marginTop: '20px',
-                padding: '12px 16px',
-                background: 'var(--bg-surface)',
-                borderRadius: 'var(--radius)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '0.76rem',
-              }}
-            >
-              <span>
-                <strong>Score Delta:</strong> {Math.abs(sub1.total - sub2.total).toFixed(1)}% advantage to{' '}
-                <strong>{sub1.total >= sub2.total ? sub1.name : sub2.name}</strong>
-              </span>
-              <span>
-                <strong>Originality Leader:</strong>{' '}
-                {sub1.originality >= sub2.originality ? `${sub1.name} (${sub1.originality}/10)` : `${sub2.name} (${sub2.originality}/10)`}
-              </span>
-            </div>
-
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                className="sarvam-btn-primary"
-                onClick={() => setIsCompareModalOpen(false)}
-              >
+            <div className="modal-footer">
+              <button className="ms-btn-action ms-btn-pink" onClick={() => setIsCompareModalOpen(false)}>
                 Done Reviewing
               </button>
             </div>

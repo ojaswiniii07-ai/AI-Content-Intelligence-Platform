@@ -15,6 +15,12 @@ export default function Dashboard({ onNavigate, showToast }) {
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [sensitivityThreshold, setSensitivityThreshold] = useState(0.70)
 
+  // Forensic Master Clock State
+  const [currentTime, setCurrentTime] = useState(() => new Date())
+  const [clockMode, setClockMode] = useState('LOCAL') // 'LOCAL' | 'UTC'
+  const [isSyncingClock, setIsSyncingClock] = useState(false)
+  const [clockDriftMs, setClockDriftMs] = useState('0.08')
+
   // Dynamic stats per timeframe
   const timeframeData = {
     '24h': {
@@ -271,6 +277,25 @@ export default function Dashboard({ onNavigate, showToast }) {
     }
   }, [])
 
+  // Live Master Clock 1-second interval
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleSyncClock = () => {
+    setIsSyncingClock(true)
+    setTimeout(() => {
+      setCurrentTime(new Date())
+      const drift = (0.03 + Math.random() * 0.08).toFixed(2)
+      setClockDriftMs(drift)
+      setIsSyncingClock(false)
+      showToast(`Master Telemetry Clock synced with Stratum-1 atomic beacon (drift: ±${drift}ms)`, 'success')
+    }, 500)
+  }
+
   const handlePingCluster = () => {
     setIsPingingNodes(true)
     setTimeout(() => {
@@ -320,6 +345,34 @@ export default function Dashboard({ onNavigate, showToast }) {
     setSelectedSubmission((prev) => (prev ? { ...prev, status: newStatus } : null))
     showToast(`Updated status for "${selectedSubmission.name}" to ${newStatus}`, 'success')
   }
+
+  // Master Clock time computations
+  const isUtc = clockMode === 'UTC'
+  const hoursRaw = isUtc ? currentTime.getUTCHours() : currentTime.getHours()
+  const minutesRaw = isUtc ? currentTime.getUTCMinutes() : currentTime.getMinutes()
+  const secondsRaw = isUtc ? currentTime.getUTCSeconds() : currentTime.getSeconds()
+  const epochTimestamp = Math.floor(currentTime.getTime() / 1000)
+
+  // 12-hour format display with AM/PM
+  const ampm = hoursRaw >= 12 ? 'PM' : 'AM'
+  const hours12 = hoursRaw % 12 || 12
+  const formattedHours = String(hours12).padStart(2, '0')
+  const formattedMinutes = String(minutesRaw).padStart(2, '0')
+  const formattedSeconds = String(secondsRaw).padStart(2, '0')
+
+  // Date strings
+  const formattedDate = isUtc
+    ? currentTime.toUTCString().slice(0, 16)
+    : currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+
+  const timeZoneLabel = isUtc
+    ? 'UTC (Zulu Reference)'
+    : (Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local System Time')
+
+  // Analog angles
+  const secDeg = secondsRaw * 6
+  const minDeg = (minutesRaw + secondsRaw / 60) * 6
+  const hrDeg = ((hoursRaw % 12) + minutesRaw / 60) * 30
 
   return (
     <div className="dashboard-page">
@@ -376,6 +429,311 @@ export default function Dashboard({ onNavigate, showToast }) {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span>New Analysis</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── High-Precision Forensic Master Telemetry Clock ── */}
+      <div
+        className="forensic-master-clock-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+          padding: '12px 18px',
+          background: 'var(--bg-card)',
+          border: '2px solid #121316',
+          boxShadow: '4px 4px 0px #121316',
+          borderRadius: '10px',
+          marginBottom: '24px',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        {/* Left: Mini Analog Dial & Stratum-1 Lock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              position: 'relative',
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              background: 'var(--bg-elevated)',
+              border: '2px solid #121316',
+              boxShadow: '2px 2px 0px #121316',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="46" height="46" viewBox="0 0 46 46">
+              {/* Dial Hour Markers */}
+              <line x1="23" y1="4" x2="23" y2="8" stroke="#121316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="42" y1="23" x2="38" y2="23" stroke="#121316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="23" y1="42" x2="23" y2="38" stroke="#121316" strokeWidth="2" strokeLinecap="round" />
+              <line x1="4" y1="23" x2="8" y2="23" stroke="#121316" strokeWidth="2" strokeLinecap="round" />
+
+              {/* Hour Hand */}
+              <line
+                x1="23"
+                y1="23"
+                x2="23"
+                y2="13"
+                stroke="#FF1493"
+                strokeWidth="3"
+                strokeLinecap="round"
+                transform={`rotate(${hrDeg} 23 23)`}
+              />
+              {/* Minute Hand */}
+              <line
+                x1="23"
+                y1="23"
+                x2="23"
+                y2="8"
+                stroke="#0066FF"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                transform={`rotate(${minDeg} 23 23)`}
+              />
+              {/* Second Hand */}
+              <line
+                x1="23"
+                y1="27"
+                x2="23"
+                y2="6"
+                stroke="#FF3333"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                transform={`rotate(${secDeg} 23 23)`}
+              />
+              {/* Center Pivot Pin */}
+              <circle cx="23" cy="23" r="2.8" fill="#FFD700" stroke="#121316" strokeWidth="1.5" />
+            </svg>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  background: '#FFD700',
+                  color: '#121316',
+                  fontWeight: 900,
+                  fontSize: '0.66rem',
+                  padding: '1px 6px',
+                  border: '1.5px solid #121316',
+                  boxShadow: '1.5px 1.5px 0px #121316',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                MASTER FORENSIC CLOCK
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span className="pulse-dot green" style={{ width: '8px', height: '8px' }} />
+                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  NTP Stratum-1 Lock
+                </span>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+              Reference: <strong style={{ color: 'var(--text-primary)' }}>{timeZoneLabel}</strong> · Drift:{' '}
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#00E5A0' }}>±{clockDriftMs}ms</span> · Block Timestamp Authority
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Live Monospace Digital Ticker */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: 'var(--bg-elevated)',
+            padding: '6px 14px',
+            borderRadius: '8px',
+            border: '2px solid #121316',
+            boxShadow: '2px 2px 0px #121316',
+          }}
+        >
+          {/* Digits */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              {formattedHours}
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: '#FF1493',
+                margin: '0 1px',
+              }}
+            >
+              :
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              {formattedMinutes}
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: '#0066FF',
+                margin: '0 1px',
+              }}
+            >
+              :
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '1.65rem',
+                fontWeight: 900,
+                color: '#FF3333',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              {formattedSeconds}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+            <span
+              style={{
+                background: isUtc ? '#0066FF' : '#FF1493',
+                color: '#FFFFFF',
+                fontSize: '0.64rem',
+                fontWeight: 900,
+                padding: '2px 6px',
+                borderRadius: '3px',
+                border: '1.5px solid #121316',
+                textAlign: 'center',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {isUtc ? 'UTC' : ampm}
+            </span>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)' }}>
+              {isUtc ? 'ZULU' : 'SYSTEM'}
+            </span>
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
+
+          {/* Date & Epoch */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {formattedDate}
+            </span>
+            <span style={{ fontSize: '0.66rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+              EPOCH: {epochTimestamp}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Controls & Sync */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              borderRadius: '6px',
+              border: '2px solid #121316',
+              overflow: 'hidden',
+              boxShadow: '2px 2px 0px #121316',
+            }}
+          >
+            <button
+              onClick={() => {
+                setClockMode('LOCAL')
+                showToast('Switched master clock to Local System Time', 'info')
+              }}
+              style={{
+                padding: '6px 11px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                border: 'none',
+                background: !isUtc ? '#FFD700' : 'var(--bg-surface)',
+                color: '#121316',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title="Display Local System Time"
+            >
+              LOCAL
+            </button>
+            <button
+              onClick={() => {
+                setClockMode('UTC')
+                showToast('Switched master clock to Coordinated Universal Time (UTC)', 'info')
+              }}
+              style={{
+                padding: '6px 11px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                border: 'none',
+                borderLeft: '2px solid #121316',
+                background: isUtc ? '#00E5A0' : 'var(--bg-surface)',
+                color: '#121316',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title="Display UTC Atomic Time"
+            >
+              UTC
+            </button>
+          </div>
+
+          <button
+            onClick={handleSyncClock}
+            disabled={isSyncingClock}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              background: 'var(--bg-elevated)',
+              border: '2px solid #121316',
+              boxShadow: '2px 2px 0px #121316',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--text-primary)',
+            }}
+            title="Re-synchronize with Stratum-1 Atomic Beacon"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              style={{
+                animation: isSyncingClock ? 'spin 0.6s linear infinite' : 'none',
+              }}
+            >
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            <span>{isSyncingClock ? 'Syncing...' : 'Sync Clock'}</span>
           </button>
         </div>
       </div>

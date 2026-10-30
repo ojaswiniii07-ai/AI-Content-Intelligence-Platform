@@ -1,132 +1,156 @@
 /* ============================================================
    AuthentiQ — Global CSS Tokens & Base Styles
-   Design language inspired by Sarvam.ai — clean, architectural,
-   minimal with subtle depth. Supports light & dark mode.
+   Design Language: MEMPHIS '81 POSTMODERN DESIGN SYSTEM
+   Vibrant, Geometric, Bold, Anti-Minimalist with Hard Drop Shadows
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-/* ── Design Tokens: Light Mode (default) ────────────────────── */
+/* ── Memphis Design Tokens: Light Mode (default) ────────────── */
 :root {
-  /* Backgrounds — warm pearl and crisp card surfaces like Sarvam */
-  --bg-base:        #faf8f5;
-  --bg-surface:     #f4f1ec;
-  --bg-card:        #ffffff;
-  --bg-elevated:    #ece8e1;
-  --bg-hover:       #e5e1d7;
-  --bg-overlay:     rgba(250, 248, 245, 0.94);
+  /* Memphis Core Palette */
+  --color-pink: #FF1493;
+  --color-blue: #0066FF;
+  --color-yellow: #FFD700;
+  --color-red: #FF3333;
+  --color-green: #00E5A0;
+  --color-coral: #FF7F50;
+  --color-purple: #9B59B6;
+  --color-turquoise: #1ABC9C;
+  --color-black: #121316;
+  --color-white: #FFFFFF;
 
-  /* Borders — soft low-contrast architectural outlines */
-  --border:         rgba(0, 0, 0, 0.08);
-  --border-light:   rgba(0, 0, 0, 0.04);
-  --border-strong:  rgba(0, 0, 0, 0.16);
+  /* Backgrounds with Memphis Dotted Grid */
+  --bg-base: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFDF2;
+  --bg-hover: #FFF5F8;
+  --bg-overlay: rgba(255, 255, 255, 0.95);
 
-  /* Text — high contrast, deeply legible */
-  --text-primary:   #15161d;
-  --text-secondary: #484c59;
-  --text-muted:     #848997;
-  --text-inverse:   #ffffff;
+  /* Borders — Heavy Bold Memphis Outlines (3px solid) */
+  --border: 3px solid #121316;
+  --border-light: 2px solid #121316;
+  --border-strong: 3.5px solid #121316;
 
-  /* Brand palette — sovereign indigo & deep slate */
-  --indigo:         #4f5df0;
-  --indigo-dim:     rgba(79, 93, 240, 0.09);
-  --indigo-mid:     rgba(79, 93, 240, 0.18);
-  --indigo-dark:    #3542c8;
+  /* Text — Crisp, High-Contrast */
+  --text-primary: #121316;
+  --text-secondary: #2D3748;
+  --text-muted: #4A5568;
+  --text-inverse: #FFFFFF;
 
-  --teal:           #0ea5e9;
-  --teal-dim:       rgba(14, 165, 233, 0.09);
+  /* Brand Palette Mapping */
+  --indigo: #0066FF;
+  /* Electric Blue */
+  --indigo-dim: rgba(0, 102, 255, 0.14);
+  --indigo-mid: rgba(0, 102, 255, 0.28);
+  --indigo-dark: #004ECC;
 
-  --emerald:        #10b981;
-  --emerald-dim:    rgba(16, 185, 129, 0.10);
+  --teal: #1ABC9C;
+  /* Turquoise */
+  --teal-dim: rgba(26, 188, 156, 0.16);
 
-  --amber:          #f59e0b;
-  --amber-dim:      rgba(245, 158, 11, 0.12);
+  --emerald: #00E5A0;
+  /* Mint Green */
+  --emerald-dim: rgba(0, 229, 160, 0.20);
 
-  --rose:           #f43f5e;
-  --rose-dim:       rgba(244, 63, 94, 0.10);
+  --amber: #FFD700;
+  /* Bright Yellow */
+  --amber-dim: rgba(255, 215, 0, 0.25);
 
-  --slate:          #64748b;
-  --slate-dim:      rgba(100, 116, 139, 0.10);
+  --rose: #FF1493;
+  /* Hot Pink */
+  --rose-dim: rgba(255, 20, 147, 0.16);
 
-  /* Semantic aliases */
-  --purple:         var(--indigo);
-  --purple-dim:     var(--indigo-dim);
-  --cyan:           var(--teal);
-  --cyan-dim:       var(--teal-dim);
-  --green:          var(--emerald);
-  --green-dim:      var(--emerald-dim);
-  --orange:         var(--amber);
-  --orange-dim:     var(--amber-dim);
-  --red:            var(--rose);
-  --red-dim:        var(--rose-dim);
-  --yellow:         var(--amber);
+  --slate: #4A5568;
+  --slate-dim: rgba(74, 85, 104, 0.15);
 
-  /* Layout */
-  --sidebar-w:      240px;
-  --topbar-h:       58px;
-  --radius:         12px;
-  --radius-sm:      8px;
-  --radius-xs:      6px;
-  --radius-lg:      16px;
-  --radius-xl:      22px;
-  --radius-full:    9999px;
+  /* Semantic Aliases */
+  --purple: #9B59B6;
+  --purple-dim: rgba(155, 89, 182, 0.18);
+  --cyan: #0066FF;
+  --cyan-dim: rgba(0, 102, 255, 0.14);
+  --green: #00E5A0;
+  --green-dim: rgba(0, 229, 160, 0.20);
+  --orange: #FF7F50;
+  --orange-dim: rgba(255, 127, 80, 0.20);
+  --red: #FF3333;
+  --red-dim: rgba(255, 51, 51, 0.18);
+  --yellow: #FFD700;
 
-  /* Shadows */
-  --shadow-xs:      0 1px 2px rgba(0,0,0,.04);
-  --shadow-sm:      0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:      0 4px 14px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.02);
-  --shadow-lg:      0 12px 28px rgba(0,0,0,.08), 0 4px 8px rgba(0,0,0,.03);
-  --shadow-brand:   0 4px 20px rgba(79,93,240,.22);
+  /* Layout & Geometry: Sharp Postmodern Edges */
+  --sidebar-w: 256px;
+  --topbar-h: 62px;
+  --radius: 0px;
+  /* Sharp Memphis edges */
+  --radius-sm: 0px;
+  --radius-xs: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 9999px;
+  /* Reserved for badges and pill tags */
+
+  /* Hard Offset Memphis Shadows (Zero Blur, Maximum Tactility) */
+  --shadow-xs: 2px 2px 0px #121316;
+  --shadow-sm: 3px 3px 0px #121316;
+  --shadow-md: 5px 5px 0px #121316;
+  --shadow-lg: 8px 8px 0px #121316;
+  --shadow-brand: 6px 6px 0px #FF1493;
+  --shadow-pink: 5px 5px 0px #FF1493;
+  --shadow-yellow: 5px 5px 0px #FFD700;
+  --shadow-blue: 5px 5px 0px #0066FF;
 
   /* Transitions */
-  --transition:     all 0.22s cubic-bezier(0.2, 0, 0, 1);
-  --transition-slow:all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  --transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-slow: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Design Tokens: Dark Mode ───────────────────────────────── */
+/* ── Memphis Design Tokens: Dark Mode (80s Neon Synth) ─────── */
 [data-theme="dark"] {
-  --bg-base:        #0d0e13;
-  --bg-surface:     #13141c;
-  --bg-card:        #181a24;
-  --bg-elevated:    #202330;
-  --bg-hover:       #292d3e;
-  --bg-overlay:     rgba(13, 14, 19, 0.94);
+  --bg-base: #12131A;
+  --bg-surface: #181A22;
+  --bg-card: #1E202B;
+  --bg-elevated: #252836;
+  --bg-hover: #2F3245;
+  --bg-overlay: rgba(18, 19, 26, 0.95);
 
-  --border:         rgba(255, 255, 255, 0.08);
-  --border-light:   rgba(255, 255, 255, 0.04);
-  --border-strong:  rgba(255, 255, 255, 0.16);
+  --border: 3px solid #FFFFFF;
+  --border-light: 2px solid #FFFFFF;
+  --border-strong: 3.5px solid #FFFFFF;
 
-  --text-primary:   #f6f7fa;
-  --text-secondary: #9aa0b2;
-  --text-muted:     #5b6070;
-  --text-inverse:   #0d0e13;
+  --text-primary: #FFFFFF;
+  --text-secondary: #E2E8F0;
+  --text-muted: #A0AEC0;
+  --text-inverse: #121316;
 
-  --indigo:         #7382ff;
-  --indigo-dim:     rgba(115, 130, 255, 0.12);
-  --indigo-mid:     rgba(115, 130, 255, 0.22);
-  --indigo-dark:    #94a1ff;
+  --indigo: #0066FF;
+  --indigo-dim: rgba(0, 102, 255, 0.28);
+  --indigo-mid: rgba(0, 102, 255, 0.45);
+  --indigo-dark: #4D94FF;
 
-  --teal:           #38bdf8;
-  --teal-dim:       rgba(56, 189, 248, 0.12);
+  --teal: #00E5A0;
+  --teal-dim: rgba(0, 229, 160, 0.25);
 
-  --emerald:        #34d399;
-  --emerald-dim:    rgba(52, 211, 153, 0.12);
+  --emerald: #00E5A0;
+  --emerald-dim: rgba(0, 229, 160, 0.25);
 
-  --amber:          #fbbf24;
-  --amber-dim:      rgba(251, 191, 36, 0.12);
+  --amber: #FFD700;
+  --amber-dim: rgba(255, 215, 0, 0.30);
 
-  --rose:           #fb7185;
-  --rose-dim:       rgba(251, 113, 133, 0.12);
+  --rose: #FF1493;
+  --rose-dim: rgba(255, 20, 147, 0.28);
 
-  --shadow-xs:      0 1px 2px rgba(0,0,0,.3);
-  --shadow-sm:      0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.2);
-  --shadow-md:      0 4px 14px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.2);
-  --shadow-lg:      0 12px 28px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.2);
-  --shadow-brand:   0 4px 20px rgba(115,130,255,.28);
+  --shadow-xs: 2px 2px 0px #FFD700;
+  --shadow-sm: 3px 3px 0px #FFD700;
+  --shadow-md: 5px 5px 0px #FFD700;
+  --shadow-lg: 8px 8px 0px #FF1493;
+  --shadow-brand: 6px 6px 0px #00E5A0;
 }
 
 /* ── Reset & Base ───────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -140,14 +164,25 @@ html {
 }
 
 body {
-  background: var(--bg-base);
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(#0066FF 1.5px, transparent 1.5px),
+    radial-gradient(#FF1493 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
   color: var(--text-primary);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.012em;
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.01em;
   line-height: 1.6;
   overflow: hidden;
   height: 100vh;
   transition: background 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(rgba(0, 229, 160, 0.25) 1.5px, transparent 1.5px),
+    radial-gradient(rgba(255, 20, 147, 0.25) 1.5px, transparent 1.5px);
 }
 
 #root {
@@ -155,49 +190,89 @@ body {
   display: flex;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--slate); }
+/* ── Postmodern Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+  border-left: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-pink);
+  border: 1.5px solid var(--color-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-yellow);
+}
 
 /* ── Selection ──────────────────────────────────────────────── */
-::selection { background: var(--indigo-mid); color: var(--indigo); }
+::selection {
+  background: var(--color-yellow);
+  color: var(--color-black);
+}
 
-/* ── Animations ─────────────────────────────────────────────── */
+/* ── Memphis Keyframe Animations ────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) rotate(-2deg);
+  }
+
+  70% {
+    transform: scale(1.02) rotate(1deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
 }
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideOutRight {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(24px); }
-}
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
+
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
 }
-@keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
 }
