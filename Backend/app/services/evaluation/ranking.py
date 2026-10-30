@@ -128,6 +128,9 @@ def rank_and_shortlist(
                 override_flag=override_flag,
                 override_reason=override_reason,
                 similarity_score=ev.signals.similarity_score,
+                criterion_scores=[c.model_dump() for c in ev.criterion_scores],
+                evaluator_metadata=ev.evaluator_metadata,
+                missing_requirements=ev.missing_requirements,
             )
         )
 

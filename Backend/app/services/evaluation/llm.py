@@ -36,8 +36,10 @@ class LLMEvaluator(BaseEvaluator):
         model: Optional[str] = None,
         timeout_seconds: Optional[int] = None,
     ):
-        self._api_key = api_key or getattr(settings, "LLM_EVALUATOR_API_KEY", "")
+        self._api_key = api_key or getattr(settings, "LLM_EVALUATOR_API_KEY", "") or getattr(settings, "OPENROUTER_API_KEY", "")
         self._provider = provider or getattr(settings, "LLM_EVALUATOR_PROVIDER", "openai")
+        if not provider and self._api_key.startswith("sk-or-"):
+            self._provider = "openrouter"
         self._model = model or getattr(settings, "LLM_EVALUATOR_MODEL", "gpt-4o")
         self._timeout = timeout_seconds or getattr(settings, "LLM_EVALUATOR_TIMEOUT_SECONDS", 30)
 
@@ -72,13 +74,23 @@ class LLMEvaluator(BaseEvaluator):
 
         system_prompt = (
             "You are an expert, objective rubric evaluation engine. "
-            "Evaluate the provided submission text against the rubric criteria.\n"
+            "Evaluate the provided submission text against the rubric criteria.\n\n"
             "CRITICAL DECOUPLING DIRECTIVE:\n"
             "1. Evaluate purely on the content, argument quality, and rubric criteria.\n"
             "2. Never lower a score solely due to an AI detector flag or similarity indicators.\n"
-            "3. For each criterion, provide a numeric score within the specified [min_score, max_score] range, "
-            "exact evidence quotes from the submission, an explanation, and any missing requirements.\n"
-            "Return valid JSON matching the specified schema."
+            "3. For each criterion in the rubric, assign an objective numeric score within [0, max_score] (typically 0-10).\n"
+            "4. Provide exact evidence excerpts from the submission, an insightful analytical explanation, and a list of any missing requirements.\n\n"
+            "You MUST return valid JSON in the following exact format:\n"
+            "{\n"
+            '  "criteria": {\n'
+            '    "<criterion_key>": {\n'
+            '      "score": 8.5,\n'
+            '      "evidence_excerpts": ["excerpt quote 1"],\n'
+            '      "explanation": "Clear explanation of how the submission meets or falls short of this criterion.",\n'
+            '      "missing_requirements": ["optional missing item"]\n'
+            '    }\n'
+            '  }\n'
+            "}\n"
         )
 
         user_content = {
@@ -104,9 +116,24 @@ class LLMEvaluator(BaseEvaluator):
             "temperature": 0.1,
         }
 
+        if self._provider == "openrouter" or self._api_key.startswith("sk-or-"):
+            api_url = "https://openrouter.ai/api/v1/chat/completions"
+            headers["HTTP-Referer"] = "https://authentiq.ai"
+            headers["X-Title"] = "AuthentiQ"
+            if "/" not in payload["model"]:
+                payload["model"] = f"openai/{payload['model']}"
+            # Provide graceful fallbacks in case primary model is temporarily rate-limited upstream
+            payload["models"] = [
+                self._model,
+                "nvidia/nemotron-3.5-lightning:free",
+                "recursive/flint-v1.0:free",
+            ]
+        else:
+            api_url = "https://api.openai.com/v1/chat/completions"
+
         try:
             async with httpx.AsyncClient(timeout=float(self._timeout)) as client:
-                res = await client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+                res = await client.post(api_url, headers=headers, json=payload)
                 res.raise_for_status()
                 data = res.json()
         except httpx.TimeoutException as te:
@@ -115,8 +142,24 @@ class LLMEvaluator(BaseEvaluator):
             raise EvaluatorUnavailableError(f"LLM evaluator request failed: {e}")
 
         elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
-        raw_json_str = data["choices"][0]["message"]["content"]
-        parsed = json.loads(raw_json_str)
+        raw_json_str = data["choices"][0]["message"]["content"].strip()
+        
+        # Robust JSON cleaning: handle code blocks or trailing text
+        cleaned_json = raw_json_str
+        if "```json" in cleaned_json:
+            cleaned_json = cleaned_json.split("```json", 1)[1].split("```", 1)[0].strip()
+        elif "```" in cleaned_json:
+            cleaned_json = cleaned_json.split("```", 1)[1].split("```", 1)[0].strip()
+        elif not cleaned_json.startswith("{") and "{" in cleaned_json:
+            start_idx = cleaned_json.find("{")
+            end_idx = cleaned_json.rfind("}")
+            if end_idx > start_idx:
+                cleaned_json = cleaned_json[start_idx:end_idx+1]
+
+        try:
+            parsed = json.loads(cleaned_json)
+        except Exception as err:
+            raise EvaluatorUnavailableError(f"Failed to parse LLM evaluation JSON: {err}. Raw output: {raw_json_str[:200]}")
 
         # Build CriterionEvaluation list
         criterion_evaluations: List[CriterionEvaluation] = []
@@ -132,12 +175,24 @@ class LLMEvaluator(BaseEvaluator):
         else:
             parsed_items = []
 
-        crit_map = {c.get("key"): c for c in criteria}
+        crit_weights = rubric_data.get("weights") or {}
+        crit_map = {c.get("key", c.get("id")): c for c in criteria if isinstance(c, dict)}
 
         for c_key, c_val in parsed_items:
             spec = crit_map.get(c_key, {})
-            c_weight = float(spec.get("weight", 0.33))
-            c_max = float(spec.get("max_score", 10.0))
+            # Determine weight
+            c_weight = float(
+                spec.get("weight")
+                or crit_weights.get(c_key)
+                or (1.0 / max(1, len(parsed_items)))
+            )
+            # Determine max scale
+            c_max = float(
+                spec.get("max_score")
+                or spec.get("scale_max")
+                or rubric_data.get("scoring_scale")
+                or 10.0
+            )
             score = float(c_val.get("score", 0.0))
             excerpts = c_val.get("evidence_excerpts", [])
             explanation = c_val.get("explanation", "")
@@ -150,7 +205,7 @@ class LLMEvaluator(BaseEvaluator):
             criterion_evaluations.append(
                 CriterionEvaluation(
                     criterion_key=c_key,
-                    criterion_title=spec.get("title", c_key),
+                    criterion_title=spec.get("title") or spec.get("name") or c_key.replace("_", " ").title(),
                     score=score,
                     max_score=c_max,
                     weight=c_weight,

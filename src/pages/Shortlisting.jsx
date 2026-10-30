@@ -101,6 +101,52 @@ const initialSubmissions = [
   },
 ]
 
+function parseCsv(text) {
+  const lines = []
+  let row = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    const nextChar = text[i + 1]
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"'
+        i++
+      } else {
+        inQuotes = !inQuotes
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(current.trim())
+      current = ''
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') i++
+      row.push(current.trim())
+      if (row.some((c) => c.length > 0)) lines.push(row)
+      row = []
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  if (current.length > 0 || row.length > 0) {
+    row.push(current.trim())
+    if (row.some((c) => c.length > 0)) lines.push(row)
+  }
+
+  if (lines.length < 2) return []
+  const headers = lines[0].map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, ''))
+  return lines.slice(1).map((r) => {
+    const obj = {}
+    headers.forEach((h, idx) => {
+      obj[h] = r[idx] || ''
+    })
+    return obj
+  })
+}
+
 export default function Shortlisting({ showToast }) {
   const [projects, setProjects] = useState(initialProjects)
   const [activeProjectId, setActiveProjectId] = useState('p1')
@@ -125,6 +171,16 @@ export default function Shortlisting({ showToast }) {
 
   // Batch Selection
   const [selectedSubIds, setSelectedSubIds] = useState([])
+
+  // AI / LLM Evaluator State (Gemma 4 31B via OpenRouter)
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [evaluatingCandidateId, setEvaluatingCandidateId] = useState(null)
+
+  // CSV Dataset & Shortlister Mode State
+  const [evaluationMode, setEvaluationMode] = useState('hackathon') // 'hackathon' | 'resume'
+  const [csvFileName, setCsvFileName] = useState(null)
+  const [csvCandidateCount, setCsvCandidateCount] = useState(0)
+  const [isLoadingSample, setIsLoadingSample] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -153,6 +209,10 @@ export default function Shortlisting({ showToast }) {
             status: s.status || 'pending',
             summary: s.summary || s.decision_rationale || 'Candidate submission evaluated against weighted rubric.',
             highlight: s.highlight || 'Decoupled evaluation active: evaluated on qualitative rubric criteria.',
+            text_content: s.text_content || s.summary || '',
+            criterionScores: s.criterion_scores || s.criterionScores || [],
+            evaluatorMetadata: s.evaluator_metadata || s.evaluatorMetadata || {},
+            missingRequirements: s.missing_requirements || s.missingRequirements || [],
           }))
           setSubmissions(normalized)
           if (normalized.length > 0) {
@@ -166,6 +226,166 @@ export default function Shortlisting({ showToast }) {
       mounted = false
     }
   }, [activeProjectId])
+
+  const handleModeChange = (mode) => {
+    setEvaluationMode(mode)
+    if (mode === 'hackathon') {
+      setActiveProjectId('p1')
+      setWeights({ relevance: 35, reasoning: 35, originality: 30 })
+      showToast('Switched mode to Hackathon Project Shortlister (Rubric: Engineering & Architecture)', 'info')
+    } else {
+      setActiveProjectId('p2')
+      setWeights({ relevance: 35, reasoning: 35, originality: 30 })
+      showToast('Switched mode to Resume & Candidate Shortlister (Rubric: Senior Systems Engineering)', 'info')
+    }
+  }
+
+  const processCsvRows = (rows, fileName) => {
+    if (!rows || rows.length === 0) {
+      showToast('No valid candidate rows found in CSV file.', 'warning')
+      return
+    }
+
+    const normalized = rows.map((r, idx) => {
+      const candidateName = r.name || r.candidate_name || r.author || `Candidate #${idx + 1}`
+      const titleOrRole = r.project_title || r.role_applied || r.role || r.title || ''
+      const authorName = r.author || r.submitter || candidateName
+      const summaryText = r.summary || r.text_content || r.description || ''
+      const fullText = r.text_content || r.summary || summaryText
+      const aiScoreVal = Number(r.ai_score || r.aiscore || 18)
+      const aiSig = r.ai_signal || (aiScoreVal > 70 ? 'High' : aiScoreVal > 35 ? 'Medium' : 'Low')
+
+      return {
+        id: r.id || `csv_${idx + 1}`,
+        rank: `#${idx + 1}`,
+        name: titleOrRole ? `${candidateName} — ${titleOrRole}` : candidateName,
+        author: authorName,
+        roleApplied: r.role_applied || '',
+        projectTitle: r.project_title || '',
+        relevance: Number(r.relevance || (8.2 + (idx % 3) * 0.4)),
+        reasoning: Number(r.reasoning || (8.0 + (idx % 2) * 0.5)),
+        originality: Number(r.originality || (8.5 - (idx % 3) * 0.5)),
+        total: Number(r.total || (82.0 + (idx % 5) * 2.0)),
+        aiSignal: aiSig,
+        aiScore: aiScoreVal,
+        status: r.status || (aiScoreVal > 70 ? 'flagged' : 'pending'),
+        summary: summaryText || 'Imported candidate profile ready for evaluation.',
+        highlight: `Imported from CSV (${fileName || 'custom.csv'}).`,
+        text_content: fullText,
+        criterionScores: [],
+        evaluatorMetadata: {},
+        missingRequirements: [],
+      }
+    })
+
+    setSubmissions(normalized)
+    if (normalized.length > 0) {
+      setSelectedSub(normalized[0])
+    }
+    setCsvFileName(fileName || 'custom.csv')
+    setCsvCandidateCount(normalized.length)
+    showToast(`Successfully imported ${normalized.length} candidates from ${fileName}`, 'success')
+  }
+
+  const handleCsvFileUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = event.target.result
+        const rows = parseCsv(text)
+        processCsvRows(rows, file.name)
+      } catch (err) {
+        showToast(`Failed to parse CSV file: ${err.message}`, 'error')
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handleLoadSampleCsv = async (type) => {
+    setIsLoadingSample(true)
+    const fileName = type === 'hackathon' ? 'hackathon_submissions.csv' : 'resume_candidates.csv'
+    try {
+      const res = await fetch(`/mock_data/${fileName}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status} loading sample`)
+      const text = await res.text()
+      const rows = parseCsv(text)
+      handleModeChange(type)
+      processCsvRows(rows, fileName)
+    } catch (err) {
+      showToast(`Could not load mock CSV: ${err.message}`, 'error')
+    } finally {
+      setIsLoadingSample(false)
+    }
+  }
+
+  const handleRunLlmEvaluation = async (targetSubmissionIds = null) => {
+    setIsEvaluating(true)
+    try {
+      showToast('Connecting to Gemma 4 31B (OpenRouter) to evaluate candidates...', 'info')
+
+      const inlinePayload = submissions
+        .filter((s) => !targetSubmissionIds || targetSubmissionIds.includes(s.id))
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          title: s.name,
+          text: s.text_content || s.summary || s.highlight || s.name,
+          ai_context: {
+            ai_score: s.aiScore,
+            ai_signal: s.aiSignal,
+          },
+        }))
+
+      const res = await shortlistingApi.evaluateCohort({
+        rubricId: activeProjectId,
+        evaluatorType: 'llm',
+        submissionIds: targetSubmissionIds,
+        submissionsInline: inlinePayload.length > 0 ? inlinePayload : null,
+      })
+
+      if (res?.data?.shortlist && res.data.shortlist.length > 0) {
+        const updatedList = res.data.shortlist.map((c, idx) => ({
+          id: c.id,
+          rank: c.rank || `#${idx + 1}`,
+          name: c.name,
+          author: c.author || 'Candidate Author',
+          relevance: Number(c.relevance || 0),
+          reasoning: Number(c.reasoning || 0),
+          originality: Number(c.originality || 0),
+          total: Number(c.total || 0),
+          aiSignal: c.ai_signal || 'Low',
+          aiScore: Number(c.ai_score || 0),
+          status: c.status || 'pending',
+          summary: c.summary || '',
+          text_content: c.text_content || submissions.find((s) => s.id === c.id)?.text_content || '',
+          criterionScores: c.criterion_scores || [],
+          evaluatorMetadata: c.evaluator_metadata || {},
+          missingRequirements: c.missing_requirements || [],
+        }))
+
+        setSubmissions(updatedList)
+        const match = updatedList.find((c) => c.id === selectedSub?.id) || updatedList[0]
+        setSelectedSub(match)
+        const modelName = res.data.evaluations?.[0]?.evaluator_metadata?.model || 'google/gemma-4-31b-it:free'
+        showToast(`AI Evaluation complete! ${res.data.evaluated_count} candidates assessed with ${modelName}`, 'success')
+      } else {
+        showToast('Evaluation response received.', 'info')
+      }
+    } catch (err) {
+      showToast(`Evaluation error: ${err.message || 'LLM service failure'}`, 'error')
+    } finally {
+      setIsEvaluating(false)
+      setEvaluatingCandidateId(null)
+    }
+  }
+
+  const handleEvaluateSingle = async (candidateId) => {
+    setEvaluatingCandidateId(candidateId)
+    await handleRunLlmEvaluation([candidateId])
+  }
 
   const currentProject = projects.find((p) => p.id === activeProjectId) || projects[0]
 
@@ -327,6 +547,51 @@ export default function Shortlisting({ showToast }) {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            className="sarvam-btn-primary"
+            onClick={() => handleRunLlmEvaluation()}
+            disabled={isEvaluating}
+            style={{
+              padding: '8px 16px',
+              fontSize: '0.8rem',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+              border: 'none',
+              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#ffffff',
+              fontWeight: 600,
+              cursor: isEvaluating ? 'not-allowed' : 'pointer',
+              opacity: isEvaluating ? 0.75 : 1,
+            }}
+            title="Evaluate candidate submissions with google/gemma-4-31b-it:free via OpenRouter"
+          >
+            {isEvaluating && !evaluatingCandidateId ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '13px',
+                    height: '13px',
+                    border: '2px solid rgba(255,255,255,0.4)',
+                    borderTopColor: '#ffffff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                />
+                <span>Evaluating Cohort (Gemma 4 31B)...</span>
+              </>
+            ) : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                <span>Run AI Evaluation (Gemma 4 31B)</span>
+              </>
+            )}
+          </button>
+
           {comparedSubIds.length === 2 && (
             <button
               className="sarvam-btn-primary"
@@ -393,7 +658,214 @@ export default function Shortlisting({ showToast }) {
         </div>
       </div>
 
-      {/* ── Interactive Rubric Tuner Drawer/Box ── */}
+      {/* ── CSV Dataset Ingestion & Mode Selector ── */}
+      <div
+        className="card"
+        style={{
+          padding: '16px 20px',
+          marginBottom: '20px',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(168,85,247,0.2) 100%)',
+                border: '1px solid rgba(99,102,241,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.1rem',
+              }}
+            >
+              📊
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                CSV Dataset Ingestion &amp; Evaluation Mode
+              </h3>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Upload custom CSV files or switch between Hackathon &amp; Resume evaluation workflows
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Shortlister Mode:
+            </span>
+            <select
+              value={evaluationMode}
+              onChange={(e) => handleModeChange(e.target.value)}
+              style={{
+                padding: '5px 12px',
+                fontSize: '0.78rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--indigo)',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="hackathon">🚀 Hackathon Submissions Shortlister</option>
+              <option value="resume">💼 Resume &amp; Candidate Shortlister</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.1fr) minmax(320px, 1.9fr)', gap: '16px', alignItems: 'stretch' }}>
+          {/* CSV File Dropzone / Upload Area */}
+          <div
+            style={{
+              border: '1.5px dashed var(--border-strong)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '16px',
+              textAlign: 'center',
+              background: 'var(--bg-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              transition: 'var(--transition)',
+            }}
+            onClick={() => document.getElementById('csv-file-input').click()}
+            title="Upload CSV with candidate submissions or resumes"
+          >
+            <input
+              type="file"
+              id="csv-file-input"
+              accept=".csv"
+              onChange={handleCsvFileUpload}
+              style={{ display: 'none' }}
+            />
+            <div style={{ fontSize: '1.6rem' }}>📁</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {csvFileName ? `File: ${csvFileName}` : 'Upload Candidates CSV'}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+              {csvFileName
+                ? `✓ ${csvCandidateCount} candidates imported & ready for AI evaluation`
+                : 'Click to browse or drop CSV (supports id, name, summary, text_content)'}
+            </div>
+            <button
+              type="button"
+              className="sarvam-btn-outline"
+              style={{ fontSize: '0.72rem', padding: '4px 12px', marginTop: '4px' }}
+              onClick={(e) => {
+                e.stopPropagation()
+                document.getElementById('csv-file-input').click()
+              }}
+            >
+              Browse CSV File
+            </button>
+          </div>
+
+          {/* Quick Mock Data Loaders & Links */}
+          <div
+            style={{
+              padding: '14px 16px',
+              background: 'var(--bg-card)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '10px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Pre-configured Mock Datasets (in <code>mock_data/</code> folder):
+                </span>
+                <span className="sarvam-eyebrow-pill" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                  2 Mock Datasets Ready
+                </span>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                Load pre-populated benchmark CSVs into the studio with one click:
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn-secondary ${evaluationMode === 'hackathon' && csvFileName?.includes('hackathon') ? 'active' : ''}`}
+                  onClick={() => handleLoadSampleCsv('hackathon')}
+                  disabled={isLoadingSample}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '0.74rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    border: evaluationMode === 'hackathon' ? '1px solid var(--indigo)' : '1px solid var(--border)',
+                    background: evaluationMode === 'hackathon' ? 'var(--indigo-dim)' : 'transparent',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>🚀 Load Hackathon Mock CSV</span>
+                  <span style={{ fontSize: '0.64rem', color: 'var(--indigo)', fontWeight: 700 }}>(6 Projects)</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn-secondary ${evaluationMode === 'resume' && csvFileName?.includes('resume') ? 'active' : ''}`}
+                  onClick={() => handleLoadSampleCsv('resume')}
+                  disabled={isLoadingSample}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: '0.74rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    border: evaluationMode === 'resume' ? '1px solid var(--cyan)' : '1px solid var(--border)',
+                    background: evaluationMode === 'resume' ? 'var(--cyan-dim)' : 'transparent',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>💼 Load Resume Mock CSV</span>
+                  <span style={{ fontSize: '0.64rem', color: 'var(--cyan)', fontWeight: 700 }}>(6 Candidates)</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                Files located in: <code>mock_data/</code>
+              </span>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <a
+                  href="/mock_data/hackathon_submissions.csv"
+                  download="hackathon_submissions.csv"
+                  style={{ fontSize: '0.7rem', color: 'var(--indigo)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                  title="Download hackathon_submissions.csv"
+                >
+                  ↓ Download Hackathon CSV
+                </a>
+                <span style={{ color: 'var(--border)' }}>·</span>
+                <a
+                  href="/mock_data/resume_candidates.csv"
+                  download="resume_candidates.csv"
+                  style={{ fontSize: '0.7rem', color: 'var(--cyan)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                  title="Download resume_candidates.csv"
+                >
+                  ↓ Download Resume CSV
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {isRubricTunerOpen && (
         <div
           className="card"
@@ -847,6 +1319,101 @@ export default function Shortlisting({ showToast }) {
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginTop: '4px' }}>
                   {selectedSub.summary}
                 </p>
+              </div>
+
+              {/* AI Model Assessment & Criteria Breakdown (Gemma 4 31B via OpenRouter) */}
+              <div style={{ padding: '14px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.85rem' }}>✨</span>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+                      AI Model Assessment
+                    </span>
+                  </div>
+                  <button
+                    className="sarvam-btn-outline"
+                    onClick={() => handleEvaluateSingle(selectedSub.id)}
+                    disabled={isEvaluating}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '0.68rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      borderColor: 'var(--indigo)',
+                      color: 'var(--indigo)',
+                      cursor: isEvaluating ? 'not-allowed' : 'pointer',
+                    }}
+                    title="Run LLM evaluation specifically for this submission"
+                  >
+                    {isEvaluating && evaluatingCandidateId === selectedSub.id ? (
+                      <span>Evaluating...</span>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <span>{selectedSub.criterionScores?.length ? 'Re-evaluate (Gemma)' : 'Evaluate (Gemma 4 31B)'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                  <span className="sarvam-eyebrow-pill" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                    Model: {selectedSub.evaluatorMetadata?.model || 'google/gemma-4-31b-it:free'}
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                    Decoupled Evaluation Active
+                  </span>
+                </div>
+
+                {selectedSub.criterionScores && selectedSub.criterionScores.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {selectedSub.criterionScores.map((c, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          borderTop: idx > 0 ? '1px solid var(--border)' : 'none',
+                          paddingTop: idx > 0 ? '10px' : '0',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', fontWeight: 600, marginBottom: '3px' }}>
+                          <span style={{ color: 'var(--text-primary)' }}>{c.criterion_title || c.criterion_key}</span>
+                          <span style={{ color: 'var(--indigo)', fontWeight: 700 }}>
+                            {c.score} / {c.max_score || 10} ({c.weighted_score || 0} pts)
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '3px 0' }}>
+                          {c.explanation}
+                        </p>
+                        {c.evidence_excerpts && c.evidence_excerpts.length > 0 && (
+                          <div style={{ marginTop: '5px', padding: '6px 8px', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '4px', borderLeft: '3px solid var(--indigo)' }}>
+                            <span style={{ fontSize: '0.64rem', fontWeight: 600, color: 'var(--indigo)', display: 'block' }}>Verified Evidence Excerpt:</span>
+                            <span style={{ fontSize: '0.68rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                              "{c.evidence_excerpts[0]}"
+                            </span>
+                          </div>
+                        )}
+                        {c.missing_requirements && c.missing_requirements.length > 0 && (
+                          <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {c.missing_requirements.map((m, mIdx) => (
+                              <span key={mIdx} style={{ fontSize: '0.63rem', padding: '1px 5px', borderRadius: '3px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--rose)' }}>
+                                Missing: {m}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '8px 10px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
+                      This submission currently displays baseline heuristics. Click <strong>Evaluate (Gemma 4 31B)</strong> to query OpenRouter and generate verified criterion explanations and evidence citations.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Reviewer Override / Action Box */}

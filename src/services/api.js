@@ -235,6 +235,17 @@ export const shortlistingApi = {
       body: JSON.stringify({ criteria }),
     })
   },
+  evaluateCohort: async ({ rubricId, evaluatorType = 'llm', submissionIds = null, submissionsInline = null }) => {
+    return request('/shortlisting/evaluate', {
+      method: 'POST',
+      body: JSON.stringify({
+        rubric_id: rubricId,
+        evaluator_type: evaluatorType,
+        submission_ids: submissionIds,
+        submissions_inline: submissionsInline,
+      }),
+    })
+  },
 }
 
 // ── Audit & Reviews Endpoints ─────────────────────────────────────────────────

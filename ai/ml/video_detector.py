@@ -267,20 +267,26 @@ class AuthentiQVideoDetector:
     # ── Prediction helpers ───────────────────────────────────────────────────
 
     @torch.no_grad()
-    def _predict_face(self, face_tensor: torch.Tensor) -> float:
-        """Predict fake probability for a single face tensor."""
+    def _predict_face(self, face_tensor: torch.Tensor, temperature: float = 2.2) -> float:
+        """
+        Predict fake probability for a single face tensor with temperature scaling.
+        Temperature scaling prevents overconfident saturation from training on limited demo faces.
+        """
         # Normalize on target device
         face = face_tensor.to(self.device)
         x = (face - self._mean) / self._std
         x = x.unsqueeze(0)
         logit = self.model(x)
-        return float(torch.sigmoid(logit).item())
+        # Apply temperature scaling and clamp to prevent overfitted 0.0 or 1.0 extremes
+        scaled_logit = logit / max(temperature, 1.0)
+        prob = float(torch.sigmoid(scaled_logit).item())
+        return float(np.clip(prob, 0.03, 0.97))
 
     @staticmethod
     def _confidence_label(prob: float) -> str:
-        if prob >= 0.85 or prob <= 0.15:
+        if prob >= 0.82 or prob <= 0.18:
             return 'High'
-        if prob >= 0.65 or prob <= 0.35:
+        if prob >= 0.62 or prob <= 0.38:
             return 'Medium'
         return 'Low'
 

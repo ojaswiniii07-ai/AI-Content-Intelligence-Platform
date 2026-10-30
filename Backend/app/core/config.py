@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "Backend/.env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -100,9 +100,10 @@ class Settings(BaseSettings):
     FFPROBE_PATH: str = "ffprobe"
 
     # ── Rubric Evaluator Settings ──────────────────────────────
+    OPENROUTER_API_KEY: str = ""
     LLM_EVALUATOR_API_KEY: str = ""
-    LLM_EVALUATOR_PROVIDER: str = "openai"  # "openai" | "anthropic" | "gemini"
-    LLM_EVALUATOR_MODEL: str = "gpt-4o"
+    LLM_EVALUATOR_PROVIDER: str = "openai"  # "openai" | "openrouter" | "anthropic" | "gemini"
+    LLM_EVALUATOR_MODEL: str = "google/gemma-4-31b-it:free"
     LLM_EVALUATOR_TIMEOUT_SECONDS: int = 30
 
 

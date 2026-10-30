@@ -74,6 +74,9 @@ class ShortlistedCandidateItem(BaseModel):
     override_flag: bool = False
     override_reason: Optional[str] = None
     similarity_score: float = 0.0
+    criterion_scores: Optional[List[Dict[str, Any]]] = None
+    evaluator_metadata: Optional[Dict[str, Any]] = None
+    missing_requirements: Optional[List[str]] = None
 
 
 ShortlistCandidateItem = ShortlistedCandidateItem
