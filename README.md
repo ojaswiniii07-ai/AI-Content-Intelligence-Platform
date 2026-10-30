@@ -177,6 +177,28 @@ AuthentiQ's visual identity is built strictly on the design system defined in [d
 
 ---
 
+## 📂 Kaggle Datasets & Training Sources
+
+AuthentiQ's machine learning models are trained and calibrated on standardized benchmark datasets sourced from Kaggle:
+
+| Engine | Kaggle Dataset / Resource | Source / Competition | Samples & Scope | Model Pipeline |
+| :--- | :--- | :--- | :--- | :--- |
+| **Text Forensics** | [**DAIGT V2 Train Dataset**](https://www.kaggle.com/datasets/thedrcat/daigt-v2-train-dataset) (`train_v2_drcat_02.csv`) | [Kaggle LLM - Detect AI Generated Text](https://www.kaggle.com/competitions/llm-detect-ai-generated-text) | **44,868 essays** (Human: 61%, AI: 39%) | TF-IDF (word/char) + 12 stylistic markers feeding SGD + LightGBM ensemble |
+| **Video Deepfake** | [**Deepfake Detection Challenge (DFDC)**](https://www.kaggle.com/c/deepfake-detection-challenge) | [Kaggle DFDC Competition](https://www.kaggle.com/c/deepfake-detection-challenge) | **100,000+ video clips** with facial swaps | PyTorch MTCNN (160×160) + EfficientNet-B0 frame timeline classifier |
+| **Vision Reference**| [**Deepfake Detection Notebook**](https://www.kaggle.com/code/muhammadhusban/deepfake-detection/notebook) | [Muhammad Husban (Kaggle Code)](https://www.kaggle.com/code/muhammadhusban/deepfake-detection/notebook) | Reference architecture & training strategy | Two-phase transfer learning (head warm-up + backbone fine-tuning) |
+
+### Dataset Details:
+1. **Text Dataset (DAIGT V2 — `train_v2_drcat_02.csv`):**
+   - **Human Baseline:** Real student essays from the PERSUADE 2.0 corpus covering argumentative and analytical writing.
+   - **Synthetic Variations:** Generation outputs from state-of-the-art LLMs including GPT-4, ChatGPT (GPT-3.5), Claude, PaLM, LLaMA-2 (70B), Falcon-180B, and Mistral-7B.
+   - **Preprocessing:** De-biasing heuristics to remove Kaggle prompt leakage, sentence tokenizer with burstiness and lexical diversity calculation.
+2. **Vision Dataset (DFDC Deepfake Benchmark):**
+   - **Facial Extraction:** MTCNN bounding box localization with a 40px margin and 60px minimum face size threshold.
+   - **Temporal Frame Scrubber:** 16 uniformly sampled frames per video clip inspecting blend-boundary synthesis, frequency artifacts, and inter-frame facial jitter.
+   - Detailed quantitative metrics and calibration steps are documented in [MODEL_PERFORMANCE_METRICS.md](MODEL_PERFORMANCE_METRICS.md).
+
+---
+
 ## 🚀 Quickstart & Local Installation
 
 ### Prerequisites
