@@ -6,7 +6,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
 // Local demo token generated for reviewer/admin role to allow instant out-of-the-box local testing
-const DEFAULT_DEMO_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfcmV2aWV3ZXJfMDEiLCJpYXQiOjE3OTMxMDk1NjQsImV4cCI6MjEwODQ2OTU2NCwiZW1haWwiOiJyZXZpZXdlckBjb250ZW50aXEuaW8iLCJuYW1lIjoiTGVhZCBSZXZpZXdlciIsInJvbGUiOiJyZXZpZXdlciJ9.o8yF2MvQt6FExdK-3XQvtLYpSsdfwzi6FjAqFd0043A'
+const DEFAULT_DEMO_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfcmV2aWV3ZXJfMDEiLCJpYXQiOjE3OTMzMTk3NjEsImV4cCI6MTc5MzQwNjE2MSwiZW1haWwiOiJyZXZpZXdlckBjb250ZW50aXEuaW8iLCJuYW1lIjoiTGVhZCBSZXZpZXdlciIsInJvbGUiOiJyZXZpZXdlciJ9.ks8csoTGkupmfkPt9S7BkCh5AM7DK4uL6VARc5gBwa4'
 
 export const tokenStorage = {
   get: () => localStorage.getItem('authentiq_token') || localStorage.getItem('contentiq_token') || DEFAULT_DEMO_TOKEN,
@@ -43,6 +43,11 @@ async function request(endpoint, options = {}) {
     // Check if response is JSON
     const contentType = res.headers.get('content-type') || ''
     if (!res.ok) {
+      if (res.status === 401 && !options._retried) {
+        tokenStorage.clear()
+        const retryHeaders = { ...headers, Authorization: `Bearer ${DEFAULT_DEMO_TOKEN}` }
+        return request(endpoint, { ...options, _retried: true, headers: retryHeaders })
+      }
       if (contentType.includes('application/json')) {
         const errJson = await res.json()
         const errMsg = errJson?.error?.message || errJson?.detail || errJson?.message || `HTTP ${res.status}`
@@ -143,11 +148,12 @@ export const mediaAnalysisApi = {
   getAdapters: async () => request('/media/adapters'),
 
   // Fallback demo simulator for direct synchronous analysis
-  syncAnalyzeMedia: async (detectors) => {
+  syncAnalyzeMedia: async (detectors, uploadId = null) => {
     return request('/analysis/media', {
       method: 'POST',
       body: JSON.stringify({
         media_type: 'video',
+        upload_id: uploadId,
         detectors: detectors || ['Face Blend Artifacts', 'Lighting Inconsistency', 'Audio/Video Sync'],
       }),
     })

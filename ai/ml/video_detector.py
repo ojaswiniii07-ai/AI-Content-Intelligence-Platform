@@ -169,14 +169,17 @@ class AuthentiQVideoDetector:
         self.threshold = self.meta.get('threshold', 0.5)
 
         # Initialize MTCNN face detector
+        # MTCNN must run on CPU if CUDA is not available, because PyTorch on MPS (Apple Silicon)
+        # does not support non-divisible adaptive pooling in MTCNN's internal image resampler (issue #96056).
+        mtcnn_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if MTCNN is not None:
             self.face_detector = MTCNN(
                 image_size=self.image_size,
                 margin=self.meta.get('margin', 40),
-                min_face_size=self.meta.get('min_face_size', 60),
+                min_face_size=min(40, self.meta.get('min_face_size', 40)),
                 thresholds=[0.6, 0.7, 0.7],
                 post_process=False,
-                device=self.device,
+                device=mtcnn_device,
             )
         else:
             self.face_detector = None
@@ -204,13 +207,21 @@ class AuthentiQVideoDetector:
     # ── Frame extraction ─────────────────────────────────────────────────────
 
     def _extract_frames(self, video_path: str, n_frames: int = None) -> list:
-        """Sample n_frames evenly from a video file."""
+        """Sample n_frames evenly from a video file, or load image if given image media."""
         n_frames = n_frames or self.n_frames
         cap = cv2.VideoCapture(str(video_path))
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if total <= 0:
             cap.release()
+            # Fallback for single image file (JPG, PNG, WEBP, etc.)
+            try:
+                img = cv2.imread(str(video_path))
+                if img is not None:
+                    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    return [(0, Image.fromarray(img_rgb))]
+            except Exception:
+                pass
             return []
 
         indices = np.linspace(0, total - 1, min(n_frames, total), dtype=int)
@@ -228,21 +239,30 @@ class AuthentiQVideoDetector:
 
     # ── Face detection ───────────────────────────────────────────────────────
 
-    def _detect_face(self, pil_image: Image.Image) -> Optional[torch.Tensor]:
-        """Run MTCNN on a PIL Image, return face crop tensor or None."""
-        if self.face_detector is None:
-            # Fallback: center crop and resize
-            img = pil_image.resize((self.image_size, self.image_size))
-            arr = np.array(img).astype(np.float32) / 255.0
-            return torch.from_numpy(arr).permute(2, 0, 1)
+    def _detect_face(self, pil_image: Image.Image) -> Tuple[torch.Tensor, bool]:
+        """
+        Run MTCNN on a PIL Image.
+        Returns:
+            (tensor, is_face_detected): face crop tensor if face detected (is_face_detected=True),
+            otherwise center-crop fallback tensor (is_face_detected=False).
+        """
+        if self.face_detector is not None:
+            try:
+                face = self.face_detector(pil_image)
+                if face is not None:
+                    return face.float() / 255.0, True
+            except Exception:
+                pass
 
-        try:
-            face = self.face_detector(pil_image)
-            if face is not None:
-                return face.float() / 255.0
-        except Exception:
-            pass
-        return None
+        # Center-crop & resize fallback if MTCNN is unavailable or no face was detected
+        w, h = pil_image.size
+        min_dim = min(w, h)
+        left = (w - min_dim) // 2
+        top = (h - min_dim) // 2
+        cropped = pil_image.crop((left, top, left + min_dim, top + min_dim))
+        resized = cropped.resize((self.image_size, self.image_size), Image.Resampling.BILINEAR)
+        arr = np.array(resized).astype(np.float32) / 255.0
+        return torch.from_numpy(arr).permute(2, 0, 1), False
 
     # ── Prediction helpers ───────────────────────────────────────────────────
 
@@ -307,12 +327,13 @@ class AuthentiQVideoDetector:
         # Process each frame
         frame_results = []
         face_probs = []
+        frame_probs = []
 
         for frame_idx, pil_image in frames:
-            face_tensor = self._detect_face(pil_image)
+            crop_tensor, face_detected = self._detect_face(pil_image)
+            prob = self._predict_face(crop_tensor)
 
-            if face_tensor is not None:
-                prob = self._predict_face(face_tensor)
+            if face_detected:
                 face_probs.append(prob)
                 frame_results.append(FrameResult(
                     frame_index=frame_idx,
@@ -322,24 +343,37 @@ class AuthentiQVideoDetector:
                     face_detected=True,
                 ))
             else:
+                frame_probs.append(prob)
                 frame_results.append(FrameResult(
                     frame_index=frame_idx,
-                    fake_probability=0.0,
-                    verdict='No Face',
+                    fake_probability=round(prob, 4),
+                    verdict='Fake' if prob >= self.threshold else 'Real',
                     confidence='Low',
                     face_detected=False,
                 ))
 
-        # Aggregate frame-level predictions
+        # Aggregate frame-level predictions:
+        # Prioritize detected faces if any were found; otherwise evaluate frame-level artifacts
         if face_probs:
             mean_prob = float(np.mean(face_probs))
             max_prob = float(np.max(face_probs))
-            # Weighted: 70% mean + 30% max (catches even occasional deepfake frames)
             agg_prob = 0.7 * mean_prob + 0.3 * max_prob
+            agg_method = 'mean(0.7)+max(0.3) weighted (face crops)'
+            verdict, confidence = self._verdict(agg_prob, self.threshold)
+        elif frame_probs:
+            mean_prob = float(np.mean(frame_probs))
+            max_prob = float(np.max(frame_probs))
+            agg_prob = 0.7 * mean_prob + 0.3 * max_prob
+            agg_method = 'mean(0.7)+max(0.3) weighted (scene crops)'
+            verdict, confidence = self._verdict(agg_prob, self.threshold)
+            if confidence == 'High Confidence':
+                confidence = 'Medium Confidence'
+            if agg_prob >= self.threshold:
+                verdict = f"{verdict} (Scene Artifacts)"
         else:
             agg_prob = 0.0
-
-        verdict, confidence = self._verdict(agg_prob, self.threshold)
+            agg_method = 'none'
+            verdict, confidence = 'No Frames Analyzed', 'Low Confidence'
 
         return VideoDetectionResult(
             fake_probability=round(agg_prob, 4),
@@ -350,12 +384,12 @@ class AuthentiQVideoDetector:
             total_frames_sampled=len(frames),
             faces_detected=len(face_probs),
             frame_results=frame_results,
-            aggregation_method='mean(0.7)+max(0.3) weighted',
+            aggregation_method=agg_method,
         )
 
     def detect_frame(self, image) -> dict:
         """
-        Detect if a single image/frame contains a deepfake face.
+        Detect if a single image/frame contains a deepfake face or synthetic manipulation.
 
         Args:
             image: PIL Image, numpy array (H,W,3 RGB), or file path string.
@@ -375,23 +409,19 @@ class AuthentiQVideoDetector:
         else:
             raise ValueError(f"Unsupported image type: {type(image)}")
 
-        face_tensor = self._detect_face(pil_image)
+        crop_tensor, face_detected = self._detect_face(pil_image)
+        prob = self._predict_face(crop_tensor)
+        verdict = 'Fake' if prob >= self.threshold else 'Real'
+        conf = self._confidence_label(prob)
+        if not face_detected and conf == 'High':
+            conf = 'Medium'
 
-        if face_tensor is not None:
-            prob = self._predict_face(face_tensor)
-            return {
-                'fake_probability': round(prob, 4),
-                'verdict': 'Fake' if prob >= self.threshold else 'Real',
-                'confidence': self._confidence_label(prob),
-                'face_detected': True,
-            }
-        else:
-            return {
-                'fake_probability': 0.0,
-                'verdict': 'No Face Detected',
-                'confidence': 'Low',
-                'face_detected': False,
-            }
+        return {
+            'fake_probability': round(prob, 4),
+            'verdict': verdict,
+            'confidence': conf,
+            'face_detected': face_detected,
+        }
 
 
 # ── Module-level lazy singleton ──────────────────────────────────────────────

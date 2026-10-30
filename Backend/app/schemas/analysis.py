@@ -80,6 +80,8 @@ class MediaAnomaly(BaseModel):
 class MediaAnalysisRequest(BaseModel):
     file_name: Optional[str] = "media_sample.mp4"
     file_url: Optional[str] = None
+    upload_id: Optional[str] = None
+    file_path: Optional[str] = None
     content_type: Optional[str] = None
     media_type: Optional[str] = None
     detectors: List[str] = [

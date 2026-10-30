@@ -1,3 +1,8 @@
+import os
+# Prevent OpenMP runtime collision crashes on Apple Silicon / macOS
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import sys
 from pathlib import Path
 import uvicorn

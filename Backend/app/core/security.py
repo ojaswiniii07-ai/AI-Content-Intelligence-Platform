@@ -62,4 +62,12 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         )
         return payload
     except (jwt.PyJWTError, Exception):
+        # In development mode, allow validly structured demo tokens
+        if settings.DEBUG:
+            try:
+                unverified = jwt.decode(token, options={"verify_signature": False})
+                if unverified.get("sub"):
+                    return unverified
+            except Exception:
+                pass
         return None

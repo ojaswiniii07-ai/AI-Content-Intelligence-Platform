@@ -1,3 +1,8 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
+
+import asyncio
 import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -28,6 +33,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("Database initialized successfully.")
     except Exception as exc:
         logger.warning(f"Database schema auto-init warning: {exc}")
+
+    # Warm up ML text detector model in the background
+    try:
+        from ai.ml.detector import get_detector
+        asyncio.create_task(asyncio.to_thread(get_detector))
+        logger.info("ML text detector warmup initiated.")
+    except Exception as exc:
+        logger.warning(f"ML detector warmup skipped: {exc}")
 
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
